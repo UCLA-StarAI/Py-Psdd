@@ -6,5 +6,21 @@ class Vtree(object):
         self._left = left
         self._right = right
 
+    @property
+    def left(self):
+        return self._left
+
+    @left.setter
+    def left(self, val):
+        self._left = val
+
+    @property
+    def right(self):
+        return self._right
+
+    @right.setter
+    def right(self, val):
+        self._right = val
+
     def get_variable_set():
         pass
