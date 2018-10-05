@@ -6,6 +6,9 @@ class Sdd(object):
         self._elements = []
         self._vtree = None
 
+    def is_leaf(self):
+        return (not self._elements)
+
     @property
     def idx(self):
         return self._idx
