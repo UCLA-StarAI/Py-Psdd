@@ -28,12 +28,11 @@ class Vtree(object):
     def right(self, val):
         self._right = val
 
-    def variable_list():
+    def variable_list(self):
         if self._var:
             return [self._var]
         if self._variable_list:
             return self._variable_list
 
-        self._variable_list = self._left.variable_list +\
-                            self._right.variable_list
+        self._variable_list = self._left.variable_list + self._right.variable_list
         return self._variable_list
