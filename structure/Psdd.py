@@ -1,3 +1,5 @@
+from structure.Element import Element
+
 PSDD_FILE_SPEC = \
     'c ids of psdd nodes start at 0\n\
     c psdd nodes appear bottom-up, children before parents\n\
@@ -25,7 +27,7 @@ class Psdd(object):
 
         self._elements = []
         for p, s in sdd.elements:
-            self._elements.append((Psdd(p), Psdd(s), None))
+            self.add_element(Element(p, s))
 
         self._data = {}
         if data is not None:
@@ -74,6 +76,14 @@ class Psdd(object):
     def context_weight(self):
         return self._context_weight
 
+    def add_element(self, element):
+        self._elements.append(element)
+        element.parent = self
+
+    def remove_element(self, index_in_elements):
+        self._elements[index_in_elements].parent = None
+        del self._elements[index_in_elements]
+
     # optmization?
     def add_data(self, asgn, w):
         # if example is already added to the psdd
@@ -90,7 +100,7 @@ class Psdd(object):
             if self._base == 'T':
                 self._data[asgn] = w
 
-                v = (self._vtree.variable_list)[0]
+                v = (self._vtree.variables)[0]
                 if asgn[v]:
                     self._weight = self._weight + w
 
