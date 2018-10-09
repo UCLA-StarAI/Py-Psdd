@@ -1,14 +1,15 @@
 PSDD_FILE_SPEC = \
-'c ids of psdd nodes start at 0\n\
-c psdd nodes appear bottom-up, children before parents\n\
-c\n\
-c file syntax:\n\
-c psdd count-of-sdd-nodes\n\
-c L id-of-literal-sdd-node id-of-vtree literal\n\
-c T id-of-trueNode-sdd-node id-of-vtree log(litProb)\n\
-c F id-of-falseNode-sdd-node id-of-vtree\n\
-c D id-of-decomposition-sdd-node id-of-vtree number-of-elements {id-of-prime id-of-sub log(elementProb)}*\n\
-c\n'
+    'c ids of psdd nodes start at 0\n\
+    c psdd nodes appear bottom-up, children before parents\n\
+    c\n\
+    c file syntax:\n\
+    c psdd count-of-sdd-nodes\n\
+    c L id-of-literal-sdd-node id-of-vtree literal\n\
+    c T id-of-trueNode-sdd-node id-of-vtree log(litProb)\n\
+    c F id-of-falseNode-sdd-node id-of-vtree\n\
+    c D id-of-decomposition-sdd-node id-of-vtree number-of-elements {id-of-prime id-of-sub log(elementProb)}*\n\
+    c\n'
+
 
 class Psdd(object):
 
@@ -31,7 +32,7 @@ class Psdd(object):
             for d, w in data:
                 self.add_data(d, w)
 
-        self._theta = None # only not None if self.is_leaf
+        self._theta = None  # only not None if self.is_leaf
 
         self._weight = 0
         self._context_weight = 0
@@ -133,7 +134,7 @@ class Psdd(object):
         if self.is_leaf:
             self._theta = (self._weight + 1.0) / (self._context_weight + 1.0)
 
-    def dump(self):        
+    def dump(self):
         if self.is_leaf:
             pass
         else:
