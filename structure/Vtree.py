@@ -1,10 +1,16 @@
 class Vtree(object):
-    
+
     def __init__(self, idx=-1, var=None, left=None, right=None):
         self._idx = idx
         self._var = var
         self._left = left
         self._right = right
+
+        self._variable_list = None
+
+    @property
+    def idx(self):
+        return self._idx
 
     @property
     def left(self):
@@ -22,5 +28,12 @@ class Vtree(object):
     def right(self, val):
         self._right = val
 
-    def get_variable_set():
-        pass
+    def variable_list():
+        if self._var:
+            return [self._var]
+        if self._variable_list:
+            return self._variable_list
+
+        self._variable_list = self._left.variable_list +\
+                            self._right.variable_list
+        return self._variable_list

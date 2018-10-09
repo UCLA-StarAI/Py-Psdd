@@ -86,3 +86,7 @@ def sdd_from_file(sdd_file, vtree_file):
 
 def sdd_to_psdd(sdd):
     return Psdd(sdd)
+
+
+def psdd_to_file(psdd, file_name):
+    pass

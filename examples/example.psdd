@@ -4,7 +4,7 @@ c
 c file syntax:
 c psdd count-of-sdd-nodes
 c L id-of-literal-sdd-node literal 
-c T id-of-trueNode-sdd-node id-of-vtree trueNode variable log(litProb)
+c T id-of-trueNode-sdd-node id-of-vtree trueNode-variable log(litProb)
 c D id-of-decomposition-sdd-node id-of-vtree number-of-elements {id-of-prime id-of-sub log(elementProb)}*
 c
 psdd 1658
