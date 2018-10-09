@@ -33,7 +33,7 @@ def vtree_from_file(vtree_file):
 
                 root = node_cache[idx]
 
-    node_cache = {}    
+    node_cache = {}
 
     return root
 
@@ -77,8 +77,8 @@ def sdd_from_file(sdd_file, vtree_file):
                     u.add_element((node_cache[tmp[i]], node_cache[tmp[i + 1]]))
 
                 root = node_cache[idx] = u
-    
-    node_cache = {}    
+
+    node_cache = {}
 
     root.vtree = vtree_from_file(vtree_file)
 
@@ -86,3 +86,7 @@ def sdd_from_file(sdd_file, vtree_file):
 
 def sdd_to_psdd(sdd):
     return Psdd(sdd)
+
+
+def psdd_to_file(psdd, file_name):
+    pass

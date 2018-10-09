@@ -5,6 +5,10 @@ class Sdd(object):
         self._base = base
         self._elements = []
         self._vtree = None
+        self._vtree_idx = None
+
+    def is_leaf(self):
+        return (not self._elements)
 
     @property
     def idx(self):
@@ -29,15 +33,28 @@ class Sdd(object):
         return self._elements
 
     @property
+    def vtree_idx(self):
+        return self._vtree_idx
+
+    @vtree_idx.setter
+    def vtree_idx(self, idx):
+        self._vtree_idx = idx
+
+    @property
     def vtree(self):
         return self._vtree
 
     @vtree.setter
-    def vtree(self, u):        
-        self._vtree = u        
+    def vtree(self, u):
+        self._vtree = u
+        self._vtree_idx = u.idx
         for p, s in self._elements:
             p.vtree = u.left
             s.vtree = u.right
+
+    def normalize(self):
+        #TODO
+        pass
 
     def add_element(self, element):
         self._elements.append(element)
