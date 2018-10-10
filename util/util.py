@@ -85,7 +85,7 @@ def sdd_from_file(sdd_file, vtree_file):
     return root
 
 def sdd_to_psdd(sdd):
-    return Psdd(sdd)
+    return Psdd(sdd.vtree, sdd)
 
 
 def psdd_to_file(psdd, file_name):

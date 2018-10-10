@@ -15,10 +15,10 @@ PSDD_FILE_SPEC = \
 
 class Psdd(object):
 
-    def __init__(self, sdd=None, data=[]):
+    def __init__(self, vtree, sdd=None, data=[]):
 
         self._idx = sdd.idx
-        self._vtree = sdd.vtree
+        self._vtree = vtree
         self._vtree_idx = sdd.vtree_idx
         try:
             self._base = int(sdd.base)
@@ -39,17 +39,23 @@ class Psdd(object):
         self._weight = 0
         self._context_weight = 0
 
-    @property
-    def is_leaf(self):
-        return (not self._elements)
+        self._num_parents = 0
 
     @property
     def idx(self):
         return self._idx
 
     @property
+    def is_leaf(self):
+        return (not self._elements)
+
+    @property
     def base(self):
         return self._base
+
+    @property
+    def vtree(self):
+        return self._vtree
 
     @property
     def data(self):
@@ -75,6 +81,14 @@ class Psdd(object):
     @property
     def context_weight(self):
         return self._context_weight
+
+    @property
+    def num_parents(self):
+        return self._num_parents
+
+    @num_parents.setter
+    def num_parents(self, value):
+        self._num_parents = value
 
     def add_element(self, element):
         self._elements.append(element)
