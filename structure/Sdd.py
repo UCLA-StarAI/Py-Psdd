@@ -53,8 +53,8 @@ class Sdd(object):
             s.vtree = u.right
 
     def normalize(self):
-        #TODO
-        pass
+        for p, s in self._elements:
+            pass            
 
     def add_element(self, element):
         self._elements.append(element)

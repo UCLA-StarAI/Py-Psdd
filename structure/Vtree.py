@@ -1,6 +1,6 @@
 class Vtree(object):
 
-    def __init__(self, idx=, var=None, left=None, right=None):
+    def __init__(self, idx, var=None, left=None, right=None):
         self._idx = idx
         self._var = var
         self._left = left
