@@ -15,12 +15,15 @@ PSDD_FILE_SPEC = \
 
 class Psdd(object):
 
-    num_nodes = 0
+    #num_nodes = 0
 
     def __init__(self, vtree, sdd=None, data={}):
 
-        Psdd.node_count += 1
-        self._index += Psdd.num_nodes
+        # Please fix:
+        #
+        # Psdd.node_count += 1
+        # self._index += Psdd.num_nodes
+        #
 
         self._vtree = vtree
 
@@ -29,6 +32,7 @@ class Psdd(object):
         self._theta = None  # only not None if self.is_leaf
 
         self._weight = 0
+
         self._context_weight = 0
 
         self._num_parents = 0
@@ -43,7 +47,7 @@ class Psdd(object):
 
             self._elements = []
             for p, s in sdd.elements:
-                self.add_element(Element(Psdd(p.vtree, p), Psdd(s.vtree, s)))
+                self.add_element(Element(Psdd(p.vtree, p), Psdd(s.vtree, s), None))
 
         if data is not None:
             for d, w in data.items():
@@ -78,8 +82,8 @@ class Psdd(object):
 
         if data is None:
             self._weight = 0
-            for e, theta in self._elements:
-                p, s = e.prime, e.sub
+            for e in self._elements:
+                p, s, theta = e.prime, e.sub, e.theta
                 p._context_weight = s._context_weight = 0
                 p.data = s.data = None
 
@@ -100,7 +104,7 @@ class Psdd(object):
         self._num_parents = value
 
     def add_element(self, element):
-        self._elements.append((element, None))
+        self._elements.append(element)
         element.parent = self
 
     def remove_element(self, index_in_elements):
@@ -126,8 +130,8 @@ class Psdd(object):
                 # get the variable from the vtree leaf
                 v = None
                 for x in self._vtree.variables:
-                    v = x                
-                
+                    v = x
+
                 if asgn[v]:
                     self._weight = self._weight + w
 
@@ -145,7 +149,7 @@ class Psdd(object):
 
         else:
 
-            for e, theta in self._elements:
+            for e in self._elements:
                 if e.prime.add_data(asgn, w):
                     if e.sub.add_data(asgn, w):
                         self._data[asgn] = w
@@ -161,10 +165,9 @@ class Psdd(object):
 
     def calculate_parameter(self):
         for i, e in enumerate(self._elements):
-            e, theta = e
-            p, s = e.prime, e.sub
+            p, s, theta = e.prime, e.sub, e.theta
             theta = (p._weight + 1.0) / (p._context_weight + float(len(self._elements)))
-            self._elements[i] = (e, theta)
+            self._elements[i] = Element(p, s, theta)
 
             p.calculate_parameter()
             s.calculate_parameter()

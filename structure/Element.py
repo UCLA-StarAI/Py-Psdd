@@ -1,12 +1,12 @@
 class Element(object):
 
-    def __init__(self, prime, sub, parent=None):
+    def __init__(self, prime, sub, theta=None, parent=None):
         self._prime = prime
         self._sub = sub
-        self._prime.numParents += 1
-        self._sub.numParents += 1
+        self._prime.num_parents += 1
+        self._sub.num_parents += 1
+        self._theta = theta
         self._parent = parent
-        self._theta = 0.0
         self._splittable_variables = set()
 
     @property
