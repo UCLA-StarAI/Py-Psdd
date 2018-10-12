@@ -1,11 +1,16 @@
 class Sdd(object):
 
-    def __init__(self, idx=-1, base=None):
+    def __init__(self, idx, base=None, vtree=None,):
         self._idx = idx
         self._base = base
         self._elements = []
-        self._vtree = None
-        self._vtree_idx = None
+
+        if vtree is None:
+            self._vtree = None
+            self._vtree_idx = None
+        else:
+            self._vtree = vtree
+            self._vtree_idx = vtree.idx
 
     def is_leaf(self):
         return (not self._elements)
@@ -52,9 +57,41 @@ class Sdd(object):
             p.vtree = u.left
             s.vtree = u.right
 
-    def normalize(self):
-        for p, s in self._elements:
-            pass            
+    def normalize(self, next_idx):
+        for e in self._elements:
+            for u in e:
+
+                uv = u.vtree
+                if not uv.is_leaf:
+
+                    if u.is_leaf:
+                        if u._base == 'T':
+                            u._base = None
+                            u.add_element((Sdd(next_idx, 'T', uv.left), Sdd(next_idx + 1, 'T', uv.right)))
+                            next_idx += 2
+
+                        if u._base == 'F':
+                            u._base = None
+                            u.add_element((Sdd(next_idx, 'T', uv.left), Sdd(next_idx + 1, 'F', uv.right)))
+                            next_idx += 2
+
+                        if isinstance(u._base, int):
+                            var = u._base
+                            u._base = None
+
+                            if var in uv.left.variables:
+                                u.add_element((Sdd(next_idx, var, uv.left), Sdd(next_idx + 1, 'T', uv.right)))
+                                next_idx += 2
+                                u.add_element((Sdd(next_idx, -var, uv.left), Sdd(next_idx + 1, 'F', uv.right)))
+                                next_idx += 2
+
+                            if var in uv.right.variables:
+                                u.add_element((Sdd(next_idx, 'T', uv.left), Sdd(next_idx + 1, var, uv.right)))
+                                next_idx += 2
+            
+                    u.normalize(next_idx)
+
+
 
     def add_element(self, element):
         self._elements.append(element)
