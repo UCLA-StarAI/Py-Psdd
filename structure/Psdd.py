@@ -15,7 +15,12 @@ PSDD_FILE_SPEC = \
 
 class Psdd(object):
 
+    num_nodes = 0
+
     def __init__(self, vtree, sdd=None, data={}):
+
+        Psdd.node_count += 1
+        self._index += Psdd.num_nodes
 
         self._vtree = vtree
 
@@ -29,10 +34,8 @@ class Psdd(object):
         self._num_parents = 0
 
         if sdd is None:
-            self._idx = 0
             self._base = 'T'
         else:
-            self._vtree_idx = sdd.vtree_idx
             try:
                 self._base = int(sdd.base)
             except:
