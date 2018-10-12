@@ -6,6 +6,7 @@ class Element(object):
         self._prime.numParents += 1
         self._sub.numParents += 1
         self._parent = parent
+        self._theta = 0.0
         self._splittable_variables = set()
 
     @property
@@ -37,6 +38,14 @@ class Element(object):
     @parent.setter
     def parent(self, value):
         self._parent = value
+
+    @property
+    def theta(self):
+        return self._theta
+
+    @theta.setter
+    def theta(self, value):
+        self._theta = value
 
     @property
     def splittable_variables(self):
