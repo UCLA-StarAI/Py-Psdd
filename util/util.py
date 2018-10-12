@@ -82,6 +82,8 @@ def sdd_from_file(sdd_file, vtree_file):
 
     root.vtree = vtree_from_file(vtree_file)
 
+    root.normalize(1000)
+
     return root
 
 def sdd_to_psdd(sdd):
