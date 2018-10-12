@@ -120,7 +120,11 @@ class Psdd(object):
             if self._base == 'T':
                 self._data[asgn] = w
 
-                v = (self._vtree.variables)[0]
+                # get the variable from the vtree leaf
+                v = None
+                for x in self._vtree.variables:
+                    v = x                
+                
                 if asgn[v]:
                     self._weight = self._weight + w
 
