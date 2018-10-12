@@ -3,6 +3,8 @@ class Element(object):
     def __init__(self, prime, sub, parent=None):
         self._prime = prime
         self._sub = sub
+        self._prime.numParents += 1
+        self._sub.numParents += 1
         self._parent = parent
         self._splittable_variables = set()
 
@@ -12,7 +14,10 @@ class Element(object):
 
     @prime.setter
     def prime(self, value):
+        if self._prime is not None:
+            self._prime.numParents -= 1
         self._prime = value
+        self._prime.numParents += 1
 
     @property
     def sub(self):
@@ -20,7 +25,10 @@ class Element(object):
 
     @sub.setter
     def sub(self, value):
+        if self._sub is not None:
+            self._sub.numParents -= 1
         self._sub = value
+        self._sub.numParents += 1
 
     @property
     def parent(self):
