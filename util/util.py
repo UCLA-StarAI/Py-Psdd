@@ -67,7 +67,7 @@ def sdd_from_file(sdd_file, vtree_file):
 
             if head == 'L':
                 idx, idx_vtree, lit = [ int(x) for x in tail.split(' ') ]
-                root = node_cache[idx] = Sdd(idx=idx, base=lit)
+                root = node_cache[idx] = Sdd(idx, base=lit)
 
             if head == 'D':
                 tmp = [ int(x) for x in tail.split(' ') ]
@@ -76,6 +76,8 @@ def sdd_from_file(sdd_file, vtree_file):
                 u = Sdd(idx)
                 for i in range(0, ele_cnt * 2, 2):
                     u.add_element((node_cache[tmp[i]], node_cache[tmp[i + 1]]))
+                if idx == 1:
+                    node_1 = u
 
                 root = node_cache[idx] = u
 

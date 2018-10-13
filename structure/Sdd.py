@@ -13,8 +13,9 @@ class Sdd(object):
             self._vtree = vtree
             self._vtree_idx = vtree.idx
 
+    @property
     def is_leaf(self):
-        return (not self._elements)
+        return not self._elements
 
     @property
     def idx(self):
@@ -69,11 +70,11 @@ class Sdd(object):
     def normalize(self, next_idx):
         for e in self._elements:
             for u in e:
-
                 uv = u.vtree
                 if not uv.is_leaf:
 
-                    if u.is_leaf:
+                    if u.is_leaf:                        
+
                         if u._base == 'T':
                             u._base = None
                             u.add_element((Sdd(next_idx, 'T', uv.left), Sdd(next_idx + 1, 'T', uv.right)))
@@ -99,7 +100,7 @@ class Sdd(object):
                                 next_idx += 2
 
                     next_idx = u.normalize(next_idx)
-                    
+
         return next_idx
 
     def add_element(self, element):
