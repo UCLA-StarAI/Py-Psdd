@@ -201,10 +201,10 @@ class Psdd(object):
         res_cache = []
 
         Q = queue.Queue()
-        vis = set()        
+        vis = set()
 
         Q.put(self)
-        vis.add(self._idx)        
+        vis.add(self._idx)
 
         while not Q.empty():
             u = Q.get()
@@ -226,14 +226,14 @@ class Psdd(object):
                         vis.add(e.prime._idx)
                     if e.sub._idx not in vis:
                         Q.put(e.sub)
-                        vis.add(e.sub._idx)            
+                        vis.add(e.sub._idx)
 
             res_cache.insert(0, s)
 
         res = PSDD_FILE_SPEC
         res += 'psdd {}\n'.format(self._node_count)
         for s in res_cache:
-            res += s + '\n'        
+            res += s + '\n'
 
         return res
 
