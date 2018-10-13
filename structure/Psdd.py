@@ -69,7 +69,7 @@ class Psdd(object):
 
     @property
     def is_leaf(self):
-        return (not self._elements)
+        return not self._elements
 
     @property
     def is_literal(self):
@@ -201,10 +201,10 @@ class Psdd(object):
         res_cache = []
 
         Q = queue.Queue()
-        vis = set()        
+        vis = set()
 
         Q.put(self)
-        vis.add(self)
+        vis.add(self._idx)
 
         while not Q.empty():
             u = Q.get()
@@ -217,21 +217,22 @@ class Psdd(object):
                 if isinstance(u._base, int):
                     s = 'L {} {} {}'.format(u._idx, u._vtree.idx, u._base)
             else:
-                s = 'D {} {} {}'.format(u._idx, u._vtree.idx, len(u._elements))                
+                s = 'D {} {} {}'.format(u._idx, u._vtree.idx, len(u._elements))
                 for e in u._elements:
                     s += ' {} {} {}'.format(e.prime._idx, e.sub._idx, math.log(e.theta))
 
-                    if e.prime not in vis:
+                    if e.prime._idx not in vis:
                         Q.put(e.prime)
-                        vis.add(e.prime)
-                    if e.sub not in vis:
+                        vis.add(e.prime._idx)
+                    if e.sub._idx not in vis:
                         Q.put(e.sub)
-                        vis.add(e.sub)
+                        vis.add(e.sub._idx)
 
             res_cache.insert(0, s)
 
         res = PSDD_FILE_SPEC
-        for s in res_cache:           
+        res += 'psdd {}\n'.format(self._node_count)
+        for s in res_cache:
             res += s + '\n'
 
         return res
