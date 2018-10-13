@@ -40,21 +40,22 @@ def vtree_from_file(vtree_file):
 def sdd_from_file(sdd_file, vtree_file):
     root = None
     node_cache = {}
+    node_count = 0
 
     with open(sdd_file, "r") as f:
 
         for line in f:
             line = line[:-1] #Get rid of the '\n' TODO
 
-            head = line.split(' ')[0]
+            head = line.split(' ', 1)[0]
 
             if head == 'c':
                 continue
 
-            if head == 'sdd':
-                continue
-
             tail = line.split(' ', 1)[1]
+
+            if head == 'sdd':
+                node_count = int(tail)
 
             if head == 'F':
                 idx = int(tail)
@@ -82,13 +83,12 @@ def sdd_from_file(sdd_file, vtree_file):
 
     root.vtree = vtree_from_file(vtree_file)
 
-    root.normalize(1000)
+    root.node_count = root.normalize(root.node_count)
 
     return root
 
 def sdd_to_psdd(sdd):
     return Psdd(sdd.vtree, sdd)
-
 
 def psdd_to_file(psdd, file_name):
     pass

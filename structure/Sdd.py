@@ -4,6 +4,7 @@ class Sdd(object):
         self._idx = idx
         self._base = base
         self._elements = []
+        self._node_count = 1
 
         if vtree is None:
             self._vtree = None
@@ -36,6 +37,14 @@ class Sdd(object):
     @property
     def elements(self):
         return self._elements
+
+    @property
+    def node_count(self):
+        return self._node_count
+
+    @node_count.setter
+    def node_count(self, val):
+        self._node_count = val
 
     @property
     def vtree_idx(self):
@@ -88,10 +97,10 @@ class Sdd(object):
                             if var in uv.right.variables:
                                 u.add_element((Sdd(next_idx, 'T', uv.left), Sdd(next_idx + 1, var, uv.right)))
                                 next_idx += 2
-            
-                    u.normalize(next_idx)
 
-
+                    next_idx = u.normalize(next_idx)
+                    
+        return next_idx
 
     def add_element(self, element):
         self._elements.append(element)

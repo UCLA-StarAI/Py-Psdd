@@ -9,3 +9,7 @@ if __name__ == '__main__':
     psdd.data = data_set.train
     psdd.calculate_parameter()
     print(psdd.base)
+
+    with open('./examples/big-swap.psdd', 'w') as f:
+        f.write(psdd.dump())
+
