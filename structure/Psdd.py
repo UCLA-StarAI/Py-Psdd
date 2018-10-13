@@ -1,17 +1,19 @@
+import math
+import queue
+
 from structure.Element import Element
 
 PSDD_FILE_SPEC = \
-    'c ids of psdd nodes start at 0\n\
-    c psdd nodes appear bottom-up, children before parents\n\
-    c\n\
-    c file syntax:\n\
-    c psdd count-of-sdd-nodes\n\
-    c L id-of-literal-sdd-node id-of-vtree literal\n\
-    c T id-of-trueNode-sdd-node id-of-vtree log(litProb)\n\
-    c F id-of-falseNode-sdd-node id-of-vtree\n\
-    c D id-of-decomposition-sdd-node id-of-vtree number-of-elements {id-of-prime id-of-sub log(elementProb)}*\n\
-    c\n'
-
+'c ids of psdd nodes start at 0\n\
+c psdd nodes appear bottom-up, children before parents\n\
+c\n\
+c file syntax:\n\
+c psdd count-of-sdd-nodes\n\
+c T id-of-trueNode-sdd-node id-of-vtree log(litProb)\n\
+c F id-of-falseNode-sdd-node id-of-vtree\n\
+c L id-of-literal-sdd-node id-of-vtree literal\n\
+c D id-of-decomposition-sdd-node id-of-vtree number-of-elements {id-of-prime id-of-sub log(elementProb)}*\n\
+c\n'
 
 class Psdd(object):
 
@@ -25,6 +27,8 @@ class Psdd(object):
         # self._index += Psdd.num_nodes
         #
 
+        self._idx = 0
+
         self._vtree = vtree
 
         self._data = {}
@@ -37,9 +41,14 @@ class Psdd(object):
 
         self._num_parents = 0
 
+        self._node_count = None
+
         if sdd is None:
+            self._idx = 0
             self._base = 'T'
+            self._node_count = 1
         else:
+            self._idx = sdd.idx
             try:
                 self._base = int(sdd.base)
             except:
@@ -48,6 +57,7 @@ class Psdd(object):
             self._elements = []
             for p, s in sdd.elements:
                 self.add_element(Element(Psdd(p.vtree, p), Psdd(s.vtree, s), None))
+            self._node_count = sdd.node_count
 
         if data is not None:
             for d, w in data.items():
@@ -60,6 +70,10 @@ class Psdd(object):
     @property
     def is_leaf(self):
         return (not self._elements)
+
+    @property
+    def is_literal(self):
+        return isinstance(self._base, int)
 
     @property
     def base(self):
@@ -102,6 +116,14 @@ class Psdd(object):
     @num_parents.setter
     def num_parents(self, value):
         self._num_parents = value
+
+    @property
+    def node_count(self):
+        return self._node_count
+
+    @node_count.setter
+    def node_count(self, value):
+        self._node_count = value
 
     def add_element(self, element):
         self._elements.append(element)
@@ -176,7 +198,42 @@ class Psdd(object):
             self._theta = (self._weight + 1.0) / (self._context_weight + 1.0)
 
     def dump(self):
-        if self.is_leaf:
-            pass
-        else:
-            pass
+        res_cache = []
+
+        Q = queue.Queue()
+        vis = set()        
+
+        Q.put(self)
+        vis.add(self)
+
+        while not Q.empty():
+            u = Q.get()
+            s = ''
+            if u.is_leaf:
+                if u._base == 'T':
+                    s = 'T {} {} {}'.format(u._idx, u._vtree.idx, math.log(u._theta))
+                if u._base == 'F':
+                    s = 'F {} {}'.format(u._idx, u._vtree.idx)
+                if isinstance(u._base, int):
+                    s = 'L {} {} {}'.format(u._idx, u._vtree.idx, u._base)
+            else:
+                s = 'D {} {} {}'.format(u._idx, u._vtree.idx, len(u._elements))                
+                for e in u._elements:
+                    s += ' {} {} {}'.format(e.prime._idx, e.sub._idx, math.log(e.theta))
+
+                    if e.prime not in vis:
+                        Q.put(e.prime)
+                        vis.add(e.prime)
+                    if e.sub not in vis:
+                        Q.put(e.sub)
+                        vis.add(e.sub)
+
+            res_cache.insert(0, s)
+
+        res = PSDD_FILE_SPEC
+        for s in res_cache:           
+            res += s + '\n'
+
+        return res
+
+
