@@ -19,49 +19,23 @@ class Psdd(object):
 
     #num_nodes = 0
 
-    def __init__(self, vtree, sdd=None, data={}):
-
+    def __init__(self, idx=None, vtree=None):
         # Please fix:
         #
         # Psdd.node_count += 1
         # self._index += Psdd.num_nodes
         #
-
-        self._idx = 0
-
+        self._idx = idx
         self._vtree = vtree
+        self._elements = []
 
         self._data = {}
-
         self._theta = None  # only not None if self.is_leaf
-
         self._weight = 0
-
         self._context_weight = 0
 
         self._num_parents = 0
-
         self._node_count = None
-
-        if sdd is None:
-            self._idx = 0
-            self._base = 'T'
-            self._node_count = 1
-        else:
-            self._idx = sdd.idx
-            try:
-                self._base = int(sdd.base)
-            except:
-                self._base = sdd.base
-
-            self._elements = []
-            for p, s in sdd.elements:
-                self.add_element(Element(Psdd(p.vtree, p), Psdd(s.vtree, s), None))
-            self._node_count = sdd.node_count
-
-        if data is not None:
-            for d, w in data.items():
-                self.add_data(d, w)
 
     @property
     def idx(self):
@@ -236,5 +210,3 @@ class Psdd(object):
             res += s + '\n'
 
         return res
-
-

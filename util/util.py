@@ -1,8 +1,9 @@
 from structure.Vtree import *
 from structure.Sdd import *
 from structure.Psdd import *
+from structure.Element import *
 
-def vtree_from_file(vtree_file):
+def vtree_from_file(vtree_file, return_node_cache=False):
     root = None
     node_cache = {}
 
@@ -33,8 +34,8 @@ def vtree_from_file(vtree_file):
 
                 root = node_cache[idx]
 
-    node_cache = {}
-
+    if return_node_cache:
+        return root, node_cache
     return root
 
 def sdd_from_file(sdd_file, vtree_file):
@@ -89,8 +90,56 @@ def sdd_from_file(sdd_file, vtree_file):
 
     return root
 
+def psdd_from_file(psdd_file, vtree_file):
+    root = None
+    node_cache = {}
+    node_count = 0
+
+    vtree, vtree_node_cache = vtree_from_file(vtree_file, return_node_cache=True)
+
+    with open(psdd_file, "r") as f:
+
+        for line in f:
+            line = line.strip([' ', '\n'])
+
+            head = line.split(' ', 1)[0]
+
+            if head == 'c':
+                continue
+
+            tail = line.split(' ', 1)[1]
+
+            if head == 'psdd':
+                node_count = int(tail)
+
+            if head == 'T':
+                idx, vtree_idx, log_prob = tail.split(' ')
+                idx, vtree_idx, log_prob = int(idx), int(vtree_idx), float(log_prob)
+                Psdd(vtree_node_cache[vtree_idx])
+
+            if head == 'F':
+                idx, vtree_idx = [ int(x) for x in tail.split(' ') ]
+
+            if head == 'L':
+                idx, vtree_idx, lit = [ int(x) for x in tail.split(' ') ]
+
+            if head == 'D':
+                tmp = [ int(x) for x in tail.split(' ') ]
+                idx, vtree_idx, ele_cnt = tmp[0], tmp[1], tmp[2]
+                tmp = tmp[3:]
+
 def sdd_to_psdd(sdd):
-    return Psdd(sdd.vtree, sdd)
+    u = Psdd(sdd.idx, sdd.vtree)
+    try:
+        u._base = int(sdd.base)
+    except:
+        u._base = sdd.base
+
+    for p, s in sdd.elements:
+        u.add_element(Element(sdd_to_psdd(p), sdd_to_psdd(s)))
+    u._node_count = sdd.node_count
+
+    return u
 
 def psdd_to_file(psdd, file_name):
     pass

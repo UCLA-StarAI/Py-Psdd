@@ -1,17 +1,25 @@
 class Sdd(object):
 
-    def __init__(self, idx, base=None, vtree=None,):
-        self._idx = idx
+    def __init__(self, idx, base=None, vtree=None):
+        self._idx = idx        
         self._base = base
+
+        self._vtree = vtree
+        if self.vtree is not None:
+            self._vtree_idx = vtree.idx
+        else:
+            self._vtree_idx = None
+
+        
+
         self._elements = []
         self._node_count = 1
-
-        if vtree is None:
-            self._vtree = None
-            self._vtree_idx = None
-        else:
-            self._vtree = vtree
-            self._vtree_idx = vtree.idx
+        # if vtree is None:
+        #     self._vtree = None
+        #     self._vtree_idx = None
+        # else:
+        #     self._vtree = vtree
+        #     self._vtree_idx = vtree.idx
 
     @property
     def is_leaf(self):
