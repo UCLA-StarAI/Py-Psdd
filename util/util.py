@@ -90,6 +90,19 @@ def sdd_from_file(sdd_file, vtree_file):
 
     return root
 
+def sdd_to_psdd(sdd):
+    u = Psdd(sdd.idx, sdd.vtree)
+    try:
+        u._base = int(sdd.base)
+    except:
+        u._base = sdd.base
+
+    for p, s in sdd.elements:
+        u.add_element(Element(sdd_to_psdd(p), sdd_to_psdd(s)))
+    u._node_count = sdd.node_count
+
+    return u
+
 def psdd_from_file(psdd_file, vtree_file):
     root = None
     node_cache = {}
@@ -128,18 +141,6 @@ def psdd_from_file(psdd_file, vtree_file):
                 idx, vtree_idx, ele_cnt = tmp[0], tmp[1], tmp[2]
                 tmp = tmp[3:]
 
-def sdd_to_psdd(sdd):
-    u = Psdd(sdd.idx, sdd.vtree)
-    try:
-        u._base = int(sdd.base)
-    except:
-        u._base = sdd.base
-
-    for p, s in sdd.elements:
-        u.add_element(Element(sdd_to_psdd(p), sdd_to_psdd(s)))
-    u._node_count = sdd.node_count
-
-    return u
-
 def psdd_to_file(psdd, file_name):
-    pass
+    with open(file_name, 'w') as f:
+        f.write(psdd.dump())

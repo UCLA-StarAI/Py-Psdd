@@ -103,9 +103,12 @@ class Psdd(object):
         self._elements.append(element)
         element.parent = self
 
+    def set_element(self, i, e):
+        self._elements[i] = e        
+    
     def remove_element(self, index_in_elements):
         self._elements[index_in_elements].parent = None
-        del self._elements[index_in_elements]
+        del self._elements[index_in_elements]    
 
     # optmization?
     def add_data(self, asgn, w):
@@ -158,18 +161,6 @@ class Psdd(object):
         print(asgn)
 
         return False
-
-    def calculate_parameter(self):
-        for i, e in enumerate(self._elements):
-            p, s, theta = e.prime, e.sub, e.theta
-            theta = (p._weight + 1.0) / (p._context_weight + float(len(self._elements)))
-            self._elements[i] = Element(p, s, theta)
-
-            p.calculate_parameter()
-            s.calculate_parameter()
-
-        if self.is_leaf:
-            self._theta = (self._weight + 1.0) / (self._context_weight + 1.0)
 
     def dump(self):
         res_cache = []
