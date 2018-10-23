@@ -17,20 +17,14 @@ c\n'
 
 class Psdd(object):
 
-    #num_nodes = 0
-
     def __init__(self, idx=None, vtree=None):
-        # Please fix:
-        #
-        # Psdd.node_count += 1
-        # self._index += Psdd.num_nodes
-        #
         self._idx = idx
+        self._base = None
         self._vtree = vtree
-        self._elements = []
+        self._elements = []        
 
         self._data = {}
-        self._theta = None  # only not None if self.is_leaf
+        self._theta = None  # not None only if self.is_leaf
         self._weight = 0
         self._context_weight = 0
 
