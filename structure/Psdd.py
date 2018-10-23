@@ -17,51 +17,19 @@ c\n'
 
 class Psdd(object):
 
-    #num_nodes = 0
-
-    def __init__(self, vtree, sdd=None, data={}):
-
-        # Please fix:
-        #
-        # Psdd.node_count += 1
-        # self._index += Psdd.num_nodes
-        #
-
-        self._idx = 0
-
+    def __init__(self, idx=None, vtree=None):
+        self._idx = idx
+        self._base = None
         self._vtree = vtree
+        self._elements = []        
 
         self._data = {}
-
-        self._theta = None  # only not None if self.is_leaf
-
+        self._theta = None  # not None only if self.is_leaf
         self._weight = 0
-
         self._context_weight = 0
 
         self._num_parents = 0
-
         self._node_count = None
-
-        if sdd is None:
-            self._idx = 0
-            self._base = 'T'
-            self._node_count = 1
-        else:
-            self._idx = sdd.idx
-            try:
-                self._base = int(sdd.base)
-            except:
-                self._base = sdd.base
-
-            self._elements = []
-            for p, s in sdd.elements:
-                self.add_element(Element(Psdd(p.vtree, p), Psdd(s.vtree, s), None))
-            self._node_count = sdd.node_count
-
-        if data is not None:
-            for d, w in data.items():
-                self.add_data(d, w)
 
     @property
     def idx(self):
@@ -129,9 +97,12 @@ class Psdd(object):
         self._elements.append(element)
         element.parent = self
 
+    def set_element(self, i, e):
+        self._elements[i] = e        
+    
     def remove_element(self, index_in_elements):
         self._elements[index_in_elements].parent = None
-        del self._elements[index_in_elements]
+        del self._elements[index_in_elements]    
 
     # optmization?
     def add_data(self, asgn, w):
@@ -185,18 +156,6 @@ class Psdd(object):
 
         return False
 
-    def calculate_parameter(self):
-        for i, e in enumerate(self._elements):
-            p, s, theta = e.prime, e.sub, e.theta
-            theta = (p._weight + 1.0) / (p._context_weight + float(len(self._elements)))
-            self._elements[i] = Element(p, s, theta)
-
-            p.calculate_parameter()
-            s.calculate_parameter()
-
-        if self.is_leaf:
-            self._theta = (self._weight + 1.0) / (self._context_weight + 1.0)
-
     def dump(self):
         res_cache = []
 
@@ -236,5 +195,3 @@ class Psdd(object):
             res += s + '\n'
 
         return res
-
-

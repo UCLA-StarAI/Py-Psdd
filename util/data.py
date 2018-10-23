@@ -2,6 +2,7 @@ class DataSet(object):
 
     def __init__(self, train_data_file=None,
                     valid_data_file=None, test_data_file=None):
+        self._dim = None
         self._train = None
         self._valid = None
         self._test = None
@@ -10,7 +11,11 @@ class DataSet(object):
         if valid_data_file is not None:
             self._valid = self.read_data(valid_data_file)
         if test_data_file is not None:
-            self._test = self.read_data(test_data_file)
+            self._test = self.read_data(test_data_file)    
+
+    @property
+    def dim(self):
+        return self._dim
 
     @property
     def train(self):
@@ -40,8 +45,10 @@ class DataSet(object):
                     asgn = asgn + (x, )
 
             if asgn not in data:
-                data[asgn] = 0
+                data[asgn] = 0            
 
             data[asgn] = data[asgn] + w
+
+            self._dim = len(asgn) - 1
 
         return data
