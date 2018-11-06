@@ -21,7 +21,7 @@ class Psdd(object):
         self._idx = idx
         self._base = None
         self._vtree = vtree
-        self._elements = []        
+        self._elements = []
 
         self._data = {}
         self._theta = None  # not None only if self.is_leaf
@@ -60,14 +60,18 @@ class Psdd(object):
         if data is not None:
             self.data = None
             for d, w in data.items():
-                self.add_data(d, w)
+                f = {}
+                g = set()
+                self.add_data(d, w, f, g, True)
 
         if data is None:
             self._weight = 0
+            self._data = {}
             for e in self._elements:
                 p, s, theta = e.prime, e.sub, e.theta
                 p._context_weight = s._context_weight = 0
-                p.data = s.data = None
+                p.data = None
+                s.data = None
 
     @property
     def weight(self):
@@ -98,23 +102,24 @@ class Psdd(object):
         element.parent = self
 
     def set_element(self, i, e):
-        self._elements[i] = e        
-    
+        self._elements[i] = e
+
     def remove_element(self, index_in_elements):
         self._elements[index_in_elements].parent = None
-        del self._elements[index_in_elements]    
+        del self._elements[index_in_elements]
 
     # optmization?
-    def add_data(self, asgn, w):
+    def add_data(self, asgn, w, f={}, g=set(), is_root=False):
+        if is_root:
+            self._context_weight += w
         # if example is already added to the psdd
-        if asgn in self._data:
-            return True
-
-        self._context_weight = self._context_weight + w
+        if self._idx in f:
+            return f[self._idx]
 
         if self.is_leaf:
 
             if self._base == 'F':
+                f[self._idx] = False
                 return False
 
             if self._base == 'T':
@@ -128,6 +133,7 @@ class Psdd(object):
                 if asgn[v]:
                     self._weight = self._weight + w
 
+                f[self._idx] = True
                 return True
 
             if isinstance(self._base, int):
@@ -138,21 +144,33 @@ class Psdd(object):
                 if res:
                     self._data[asgn] = w
 
+                f[self._idx] = res
                 return res
 
         else:
-
             for e in self._elements:
-                if e.prime.add_data(asgn, w):
-                    if e.sub.add_data(asgn, w):
+                p, s = e.prime, e.sub
+                if p.add_data(asgn, w, f, g):
+
+                    if p._idx not in g:
+                        p._context_weight = p._context_weight + w
+                        g.add(p._idx)
+                    if s._idx not in g:
+                        s._context_weight = s._context_weight + w
+                        g.add(s._idx)
+
+                    if s.add_data(asgn, w, f, g):
                         self._data[asgn] = w
                         self._weight = self._weight + w
+
+                        f[self._idx] = True
                         return True
                     else:
+                        f[self._idx] = False
                         return False
 
-        print('ERROR!')
-        print(asgn)
+        # print('ERROR!')
+        # print(asgn)
 
         return False
 
@@ -187,6 +205,13 @@ class Psdd(object):
                         Q.put(e.sub)
                         vis.add(e.sub._idx)
 
+            if s == '':
+                print('s: ', s)
+                print('idx: ', u._idx)
+                print('base: ', u._base)
+                print('vtree_idx: ', u._vtree.idx)
+                print('element_cnt: ', len(u._elements))
+                print('is_leaf: ', u.is_leaf)
             res_cache.insert(0, s)
 
         res = PSDD_FILE_SPEC
