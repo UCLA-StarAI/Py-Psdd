@@ -46,7 +46,8 @@ def sdd_from_file(sdd_file, vtree_file):
     with open(sdd_file, "r") as f:
 
         for line in f:
-            line = line[:-1] #Get rid of the '\n' TODO
+            line = line[:-1]
+            print(line)
 
             head = line.split(' ', 1)[0]
 
@@ -84,9 +85,17 @@ def sdd_from_file(sdd_file, vtree_file):
 
     node_cache = {}
 
+    root.node_count = node_count
+
     root.vtree = vtree_from_file(vtree_file)
 
+    # with open('before', 'w') as f:
+        # f.write(root.dump())
+
     root.node_count = root.normalize(root.node_count)
+
+    # with open('after', 'w') as f:
+    #     f.write(root.dump())
 
     return root
 
@@ -102,6 +111,16 @@ def sdd_to_psdd(sdd):
     u._node_count = sdd.node_count
 
     return u
+
+def psdd_from_vtree(vtree_file):
+    root = Sdd(0)
+    root.add_element((Sdd(idx=1, base='T'), Sdd(idx=2, base='T')))
+    root.vtree = vtree_from_file(vtree_file)
+
+    root.node_count = 3
+    root.node_count = root.normalize(root.node_count)
+
+    return sdd_to_psdd(root)
 
 def psdd_from_file(psdd_file, vtree_file):
     root = None

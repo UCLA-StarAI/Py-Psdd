@@ -4,19 +4,31 @@ from structure.Element import *
 import math
 
 def compute_parameter(u):
+    print(u._idx, u._context_weight, u.weight)
     ele_cnt = len(u._elements)
-    for i, e in enumerate(u._elements):
-        p, s, theta = e._prime, e._sub, e._theta
-        theta = (p._weight + 1.0) / (p._context_weight + 1.0 * float(ele_cnt))
-        u._elements[i] = Element(p, s, theta)
+    for e in u._elements:
+        p, s, theta = e._prime, e._sub, None
+        if u._context_weight != 0.0:
+            theta = (p._context_weight + 0.0) / (u._context_weight + 0.0 * float(ele_cnt))
+        else:
+            theta = 1e-10
+
+        if theta == 0.0:
+            theta = 1e-10
+        e.theta = theta
 
         compute_parameter(p)
         compute_parameter(s)
 
-    if u._base == 'True':
-        u._theta = (u._weight + 1.0) / (u._context_weight + 1.0)
+    if u._base == 'T':
+        if u._context_weight != 0.0:
+            u._theta = (u._weight + 0.0) / (u._context_weight + 0.0)
+            if u._theta == 0.0:
+                u._theta = 1e-10
+        else:
+            u._theta = 1e-10
 
-def compute_probability(u, asgn):
+def compute_probability(u, asgn, d=0):
     flag = False
     for x in u.vtree.variables:
         if asgn[x] is not None:
@@ -43,7 +55,7 @@ def compute_probability(u, asgn):
         res = 0.0
         for e in u._elements:
             p, s, theta = e._prime, e._sub, e._theta
-            res += compute_probability(p, asgn) * compute_probability(s, asgn) * theta
+            res += compute_probability(p, asgn, d + 1) * compute_probability(s, asgn, d + 1) * theta
 
     return res
 

@@ -44,11 +44,11 @@ class DataSet(object):
                 for x in d:
                     asgn = asgn + (x, )
 
-            if asgn not in data:
-                data[asgn] = 0            
+                if asgn not in data:
+                    data[asgn] = 0            
 
-            data[asgn] = data[asgn] + w
+                data[asgn] = data[asgn] + w            
 
-            self._dim = len(asgn) - 1
+                self._dim = len(asgn) - 1
 
         return data
