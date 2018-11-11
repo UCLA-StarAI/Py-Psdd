@@ -1,5 +1,6 @@
 from structure.Psdd import *
 from structure.Element import *
+from structure.Sdd import *
 
 import math
 
@@ -38,7 +39,7 @@ def compute_probability(u, asgn, d=0):
         return 1.0
 
     res = None
-    if u.is_leaf:
+    if u.is_terminal:
         if u._base == 'F':
             res = 0.0
 
@@ -64,3 +65,82 @@ def compute_log_likelihood(u, data):
     for asgn, w in data.items():
         res += w * math.log(compute_probability(u, asgn))
     return res
+
+def negate(u):
+    if u.is_terminal:
+        if isinstance(u._base, int):
+            u._base = -u._base
+        if u._base == 'T':
+            u._base = 'F'
+        if u._base == 'F':
+            u._base = 'T'
+        return None
+
+    for p, s in u._elements:
+        negate(s)
+
+def apply(u1, u2, op, next_idx=0, cache={}):
+    idx1, idx2 = u1.idx, u2.idx
+    if (idx1, idx2, op) in cache:
+        return cache[(idx1, idx2, op)], next_idx
+    if (idx2, idx1, op) in cache:
+        return cache[(idx2, idx1, op)], next_idx
+
+    res = None
+    if u1.is_terminal and u2.is_terminal:
+        b = None
+        b1, b2 = u1._base, u2._base
+        if isinstance(b2, int):
+            b1, b2 = b2, b1
+
+        if isinstance(b1, int):
+            if isinstance(b2, int):
+                if op == 'AND':
+                    b = 'F' if b1 * b2 < 0 else b1
+                if op == 'OR':
+                    b = 'T' if b1 * b2 < 0 else b1
+            else:
+                if op == 'AND':
+                    b = b1 if b2 == 'T' else 'F'
+                if op == 'OR':
+                    b = 'T' if b2 == 'T' else b1
+        else:
+            if op == 'AND':
+                b = 'F' if b1 == 'F' else b2
+            if op == 'OR':
+                b = 'T' if b1 == 'T' else b2            
+
+        res = Sdd(idx=next_idx, base=b, vtree=u1.vtree)
+        next_idx += 1
+        return res, next_idx
+
+    res = Sdd(idx=next_idx, base=None, vtree=u1.vtree)
+    for p, s in u1._elements:
+        for q, t in u2._elements:
+            r, next_idx = apply(p, q, 'AND', next_idx, cache)
+            u, next_idx = apply(s, t, op, next_idx, cache)
+            res.add_element((r, u))
+    return res    
+
+def normalize(u, v, next_idx):
+
+    if u.is_terminal:
+        if isinstance(u._base, int):
+            var = u._base
+            u._base = None
+
+            if abs(var) in v.left.variables:
+                u.add_element
+
+        return None
+
+def compile(cnf, vtree):
+    ri = Sdd(0, 'T', vtree)
+    for clause in cnf:
+        rj = Sdd(0, 'T', vtree)
+        for lit in clause:
+            rk = Sdd(0, lit, vtree)
+            rk = normalize(rk, vtree, 1)
+            rj = apply(rj, rk, 'OR')
+        ri = apply(ri, rj, 'AND')
+    return ri

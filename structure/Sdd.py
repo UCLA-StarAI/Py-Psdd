@@ -22,7 +22,7 @@ class Sdd(object):
         #     self._vtree_idx = vtree.idx
 
     @property
-    def is_leaf(self):
+    def is_terminal(self):
         return not self._elements
 
     @property
@@ -78,13 +78,13 @@ class Sdd(object):
     def add_element(self, element):
         self._elements.append(element)
 
-    def normalize(self, next_idx):
+    def normalize(self, vtree, next_idx):
         for e in self._elements:
             for u in e:
-                uv = u.vtree
-                if not uv.is_leaf:
+                uv = vtree
+                if not uv.is_terminal:
 
-                    if u.is_leaf:
+                    if u.is_terminal:
 
                         if u._base == 'T':
                             u._base = None
@@ -128,7 +128,7 @@ class Sdd(object):
         while not Q.empty():
             u = Q.get()
             s = ''
-            if u.is_leaf:
+            if u.is_terminal:
                 if u._base == 'T':
                     s = 'T {} {}'.format(u._idx, u._vtree.idx)
                 if u._base == 'F':

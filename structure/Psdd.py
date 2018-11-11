@@ -25,7 +25,7 @@ class Psdd(object):
 
         self._data = {}
         self._theta = None  # not None only if self.is_leaf
-        self._weight = 0
+        self._weight = None # not None only if self.is_leaf
         self._context_weight = 0
 
         self._num_parents = 0
