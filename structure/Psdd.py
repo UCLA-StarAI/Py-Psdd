@@ -19,7 +19,7 @@ class Psdd(object):
 
     def __init__(self, idx=None, vtree=None):
         self._idx = idx
-        self._lit = None        
+        self._lit = None
         self._vtree = vtree
         self._elements = []
 

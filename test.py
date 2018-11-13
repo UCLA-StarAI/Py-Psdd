@@ -32,6 +32,3 @@ if __name__ == '__main__':
     # util.psdd_to_file(psdd, './examples/big-swap.psdd')
     # print("log_ll: ", algo.compute_log_likelihood(psdd, data_set.train))
     print("Check: {}".format(dfs(psdd, (None, ), 0, data_set.dim)))
-
-
-

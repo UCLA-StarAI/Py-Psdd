@@ -35,7 +35,7 @@ class Element(object):
     @property
     def weight(self):
         return self.weight
-    
+
     @weight.setter
     def weight(self, val):
         self._weight = val
