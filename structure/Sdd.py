@@ -5,7 +5,6 @@ class Sdd(object):
     def __init__(self, idx=0, lit=None, vtree=None):
         self._idx = idx
         self._lit = lit
-        # self._base = lit
         self._vtree = vtree
 
         if self._vtree is not None:
@@ -48,10 +47,6 @@ class Sdd(object):
             res = "(" + res + ")"
 
         return res
-
-    # @base.setter
-    # def base(self, val):
-    #     self._base = val
 
     @property
     def elements(self):

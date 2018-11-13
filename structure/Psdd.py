@@ -39,14 +39,6 @@ class Psdd(object):
     def is_terminal(self):
         return not self._elements
 
-    # @property
-    # def is_literal(self):
-    #     return isinstance(self._base, int)
-
-    # @property
-    # def base(self):
-    #     return self._base
-
     @property
     def vtree(self):
         return self._vtree
@@ -107,72 +99,6 @@ class Psdd(object):
     def remove_element(self, index_in_elements):
         self._elements[index_in_elements].parent = None
         del self._elements[index_in_elements]
-
-    # optmization?
-    # def add_data(self, asgn, w, f={}, g=set(), is_root=False):
-    #     if is_root:
-    #         self._context_weight += w
-    #     # if example is already added to the psdd
-    #     if self._idx in f:
-    #         return f[self._idx]
-
-    #     if self.is_terminal:
-
-    #         if self._base == 'F':
-    #             f[self._idx] = False
-    #             return False
-
-    #         if self._base == 'T':
-    #             self._data[asgn] = w
-
-    #             # get the variable from the vtree leaf
-    #             v = None
-    #             for x in self._vtree.variables:
-    #                 v = x
-
-    #             if asgn[v]:
-    #                 self._weight = self._weight + w
-
-    #             f[self._idx] = True
-    #             return True
-
-    #         if isinstance(self._base, int):
-    #             res = asgn[abs(self._base)]
-    #             if self._base < 0:
-    #                 res = not res
-
-    #             if res:
-    #                 self._data[asgn] = w
-
-    #             f[self._idx] = res
-    #             return res
-
-    #     else:
-    #         for e in self._elements:
-    #             p, s = e.prime, e.sub
-    #             if p.add_data(asgn, w, f, g):
-
-    #                 if p._idx not in g:
-    #                     p._context_weight = p._context_weight + w
-    #                     g.add(p._idx)
-    #                 if s._idx not in g:
-    #                     s._context_weight = s._context_weight + w
-    #                     g.add(s._idx)
-
-    #                 if s.add_data(asgn, w, f, g):
-    #                     self._data[asgn] = w
-    #                     self._weight = self._weight + w
-
-    #                     f[self._idx] = True
-    #                     return True
-    #                 else:
-    #                     f[self._idx] = False
-    #                     return False
-
-    #     # print('ERROR!')
-    #     # print(asgn)
-
-    #     return False
 
     def dump(self):
         res_cache = []
