@@ -3,6 +3,7 @@ class Element(object):
     def __init__(self, prime, sub, theta=None, parent=None):
         self._prime = prime
         self._sub = sub
+        self._weight = 0.0
         self._prime.num_parents += 1
         self._sub.num_parents += 1
         self._theta = theta
@@ -30,6 +31,14 @@ class Element(object):
             self._sub.numParents -= 1
         self._sub = value
         self._sub.numParents += 1
+
+    @property
+    def weight(self):
+        return self.weight
+    
+    @weight.setter
+    def weight(self, val):
+        self._weight = val
 
     @property
     def parent(self):

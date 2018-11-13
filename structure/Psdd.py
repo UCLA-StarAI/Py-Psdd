@@ -19,14 +19,14 @@ class Psdd(object):
 
     def __init__(self, idx=None, vtree=None):
         self._idx = idx
-        self._base = None
+        self._lit = None        
         self._vtree = vtree
         self._elements = []
 
-        self._data = {}
-        self._theta = None  # not None only if self.is_leaf
-        self._weight = 0
-        self._context_weight = 0
+        # self._data = {}
+        self._theta = 0.0  # only used for terminal nodes
+        self._weight = 0.0 # only used for terminal nodes
+        self._context_weight = 0.0
 
         self._num_parents = 0
         self._node_count = None
@@ -36,16 +36,8 @@ class Psdd(object):
         return self._idx
 
     @property
-    def is_leaf(self):
+    def is_terminal(self):
         return not self._elements
-
-    @property
-    def is_literal(self):
-        return isinstance(self._base, int)
-
-    @property
-    def base(self):
-        return self._base
 
     @property
     def vtree(self):
@@ -108,72 +100,6 @@ class Psdd(object):
         self._elements[index_in_elements].parent = None
         del self._elements[index_in_elements]
 
-    # optmization?
-    def add_data(self, asgn, w, f={}, g=set(), is_root=False):
-        if is_root:
-            self._context_weight += w
-        # if example is already added to the psdd
-        if self._idx in f:
-            return f[self._idx]
-
-        if self.is_leaf:
-
-            if self._base == 'F':
-                f[self._idx] = False
-                return False
-
-            if self._base == 'T':
-                self._data[asgn] = w
-
-                # get the variable from the vtree leaf
-                v = None
-                for x in self._vtree.variables:
-                    v = x
-
-                if asgn[v]:
-                    self._weight = self._weight + w
-
-                f[self._idx] = True
-                return True
-
-            if isinstance(self._base, int):
-                res = asgn[abs(self._base)]
-                if self._base < 0:
-                    res = not res
-
-                if res:
-                    self._data[asgn] = w
-
-                f[self._idx] = res
-                return res
-
-        else:
-            for e in self._elements:
-                p, s = e.prime, e.sub
-                if p.add_data(asgn, w, f, g):
-
-                    if p._idx not in g:
-                        p._context_weight = p._context_weight + w
-                        g.add(p._idx)
-                    if s._idx not in g:
-                        s._context_weight = s._context_weight + w
-                        g.add(s._idx)
-
-                    if s.add_data(asgn, w, f, g):
-                        self._data[asgn] = w
-                        self._weight = self._weight + w
-
-                        f[self._idx] = True
-                        return True
-                    else:
-                        f[self._idx] = False
-                        return False
-
-        # print('ERROR!')
-        # print(asgn)
-
-        return False
-
     def dump(self):
         res_cache = []
 
@@ -186,17 +112,17 @@ class Psdd(object):
         while not Q.empty():
             u = Q.get()
             s = ''
-            if u.is_leaf:
-                if u._base == 'T':
-                    s = 'T {} {} {}'.format(u._idx, u._vtree.idx, math.log(u._theta))
-                if u._base == 'F':
+            if u.is_terminal:
+                if u._lit == 'T':
+                    s = 'T {} {} {}'.format(u._idx, u._vtree.idx, u._theta)
+                if u._lit == 'F':
                     s = 'F {} {}'.format(u._idx, u._vtree.idx)
-                if isinstance(u._base, int):
-                    s = 'L {} {} {}'.format(u._idx, u._vtree.idx, u._base)
+                if isinstance(u._lit, int):
+                    s = 'L {} {} {}'.format(u._idx, u._vtree.idx, u._lit)
             else:
                 s = 'D {} {} {}'.format(u._idx, u._vtree.idx, len(u._elements))
                 for e in u._elements:
-                    s += ' {} {} {}'.format(e.prime._idx, e.sub._idx, math.log(e.theta))
+                    s += ' {} {} {}'.format(e.prime._idx, e.sub._idx, e.theta)
 
                     if e.prime._idx not in vis:
                         Q.put(e.prime)
@@ -205,13 +131,13 @@ class Psdd(object):
                         Q.put(e.sub)
                         vis.add(e.sub._idx)
 
-            if s == '':
-                print('s: ', s)
-                print('idx: ', u._idx)
-                print('base: ', u._base)
-                print('vtree_idx: ', u._vtree.idx)
-                print('element_cnt: ', len(u._elements))
-                print('is_leaf: ', u.is_leaf)
+            # if s == '':
+            #     print('s: ', s)
+            #     print('idx: ', u._idx)
+            #     print('base: ', u._base)
+            #     print('vtree_idx: ', u._vtree.idx)
+            #     print('element_cnt: ', len(u._elements))
+            #     print('is_terminal: ', u.is_terminal)
             res_cache.insert(0, s)
 
         res = PSDD_FILE_SPEC

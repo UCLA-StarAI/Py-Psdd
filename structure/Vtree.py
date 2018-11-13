@@ -1,10 +1,11 @@
 class Vtree(object):
 
-    def __init__(self, idx, var=None, left=None, right=None):
+    def __init__(self, idx, var=None, left=None, right=None, parent=None):
         self._idx = idx
         self._var = var
         self._left = left
         self._right = right
+        self._parent = parent
 
         if self._var is not None:
             self._var_set = set([self._var])
@@ -32,7 +33,15 @@ class Vtree(object):
         self._right = val
 
     @property
-    def is_leaf(self):
+    def parent(self):
+        return self._parent
+
+    @parent.setter
+    def parent(self, val):
+        self._parent = val
+
+    @property
+    def is_terminal(self):
         return self._var is not None
 
     @property
