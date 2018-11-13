@@ -96,8 +96,8 @@ def compute_probability(u, asgn, d=0):
             res = 0.0
 
         if u._lit == 'T':
-            v = list(u.vtree.variables)[0]            
-            res = u._theta if asgn[v] else (1.0 - u._theta)            
+            v = list(u.vtree.variables)[0]
+            res = u._theta if asgn[v] else (1.0 - u._theta)
 
         if isinstance(u._lit, int):
             v = abs(u._lit)
@@ -126,7 +126,7 @@ def EM(psdd0, psdd1, data):
         q = max(q, 0.01)
         data0[asgn] = w * (1 - q)
         data1[asgn] = w * q
-    
+
     set_data(psdd0, data0)
     set_data(psdd1, data1)
     compute_parameter(psdd0)
@@ -142,7 +142,7 @@ def EM(psdd0, psdd1, data):
                 W1 += w
             p0 = W0 / (W0 + W1)
             p1 = W1 / (W0 + W1)
-            
+
             for asgn, w in data.items():
                 q0 = compute_probability(psdd0, asgn)
                 q1 = compute_probability(psdd1, asgn)
@@ -179,14 +179,13 @@ def negate(u):
     for p, s in u._elements:
         negate(s)
 
-def apply(u1, u2, op, cache): # bug possible
+def apply(u1, u2, op, cache): # bug with cache
     idx1, idx2 = u1.idx, u2.idx
     if (idx1, idx2, op) in cache:
         return cache[(idx1, idx2, op)]
     if (idx2, idx1, op) in cache:
         return cache[(idx2, idx1, op)]
 
-    res = None
     if u1.is_terminal and u2.is_terminal:
         b = None
         b1, b2 = u1._lit, u2._lit
@@ -196,9 +195,9 @@ def apply(u1, u2, op, cache): # bug possible
         if isinstance(b1, int):
             if isinstance(b2, int):
                 if op == 'AND':
-                    b = 'F' if b1 * b2 < 0 else b1
+                    b = 'F' if b1 == -b2 else b1
                 if op == 'OR':
-                    b = 'T' if b1 * b2 < 0 else b1
+                    b = 'T' if b1 == -b2 else b1
             else:
                 if op == 'AND':
                     b = b1 if b2 == 'T' else 'F'
@@ -211,6 +210,8 @@ def apply(u1, u2, op, cache): # bug possible
                 b = 'T' if b1 == 'T' else b2
 
         res = Sdd(0, b, u1.vtree)
+        cache[(idx2, idx1, op)] = res
+        cache[(idx1, idx2, op)] = res
         return res
 
     res = Sdd(0, None, u1.vtree)
@@ -220,7 +221,8 @@ def apply(u1, u2, op, cache): # bug possible
             u = apply(s, t, op, cache)
             res.add_element((r, u))
 
-    cache[(idx2, idx1, op)] = cache[(idx1, idx2, op)] = res
+    cache[(idx2, idx1, op)] = res
+    cache[(idx1, idx2, op)] = res
     return res
 
 def normalize(u, v):
@@ -260,28 +262,44 @@ def normalize(u, v):
 
     return u
 
-def compile(cnf, vtree): # bug possible
+def compile(cnf, vtree):
     def f(v):
         if v.is_terminal:
             return { v._var: v }
         return { **f(v.left), **f(v.right) }
     m = f(vtree)
 
+    def test(x):
+        if (len(x._elements) == 0) and (x._lit == None):
+            return 'ERROR'
+        for p, s in x._elements:
+            res = test(p)
+            if res is not None:
+                return res
+            res = test(s)
+            if res is not None:
+                return res
+        return None
+
+    cache = {}
     ri = Sdd(0, 'T')
     ri = normalize(ri, vtree)
     ri._node_count = re_index(ri)
     for clause in cnf:
-        rj = normalize(Sdd(0, 'F'), vtree)
+        rj = Sdd(0, 'F')
+        rj = normalize(rj, vtree)
         rj._node_count = re_index(rj)
         for lit in clause:
-            rk = normalize(Sdd(0, lit, m[abs(lit)]), vtree)
+            rk = Sdd(0, lit, m[abs(lit)])
+            rk = normalize(rk, vtree)
             rk._node_count = re_index(rk)
 
-            cache = {}
+            cache.clear()
             rj = apply(rj, rk, 'OR', cache)
             rj._node_count = re_index(rj)
 
-        cache = {}
+        cache.clear()
         ri = apply(ri, rj, 'AND', cache)
         ri._node_count = re_index(ri)
+
     return ri
