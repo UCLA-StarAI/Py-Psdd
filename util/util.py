@@ -2,6 +2,20 @@ from structure.Vtree import *
 from structure.Sdd import *
 from structure.Psdd import *
 from structure.Element import *
+from algo import algo
+
+def cnf_from_file(cnf_file):
+    cnf = []
+    with open(cnf_file, 'r') as f:
+        for line in f:
+            line = line[:-1]
+            if line[0] == 'c':
+                continue
+            elif line[0] == 'p':
+                var_num = int(line.split(' ')[2])
+            else:
+                cnf.append([int(x) for x in line.split(' ')][:-1])
+    return cnf
 
 def vtree_from_file(vtree_file, return_node_cache=False):
     root = None
@@ -30,7 +44,10 @@ def vtree_from_file(vtree_file, return_node_cache=False):
                 idx, left, right = [ int(x) for x in tail.split(' ') ]
                 left = node_cache[left]
                 right = node_cache[right]
-                node_cache[idx] = Vtree(idx, left=left, right=right)
+                u = Vtree(idx, left=left, right=right)
+                left.parent = u
+                right.parent = u
+                node_cache[idx] = u
 
                 root = node_cache[idx]
 
@@ -43,11 +60,12 @@ def sdd_from_file(sdd_file, vtree_file):
     node_cache = {}
     node_count = 0
 
+    vtree, vtree_node_cache = vtree_from_file(vtree_file, True)
+
     with open(sdd_file, "r") as f:
 
         for line in f:
-            line = line[:-1]
-            print(line)
+            line = line[:-1]            
 
             head = line.split(' ', 1)[0]
 
@@ -59,52 +77,42 @@ def sdd_from_file(sdd_file, vtree_file):
             if head == 'sdd':
                 node_count = int(tail)
 
+            idx = None
             if head == 'F':
                 idx = int(tail)
-                root = node_cache[idx] = Sdd(idx, base="F")
+                node_cache[idx] = Sdd(idx, 'F')
 
             if head == 'T':
                 idx = int(tail)
-                root = node_cache[idx] = Sdd(idx, base="T")
+                node_cache[idx] = Sdd(idx, 'T')
 
             if head == 'L':
-                idx, idx_vtree, lit = [ int(x) for x in tail.split(' ') ]
-                root = node_cache[idx] = Sdd(idx, base=lit)
+                idx, vtree_idx, lit = [ int(x) for x in tail.split(' ') ]
+                u = Sdd(idx, lit, vtree_node_cache[vtree_idx])
+                node_cache[idx] = u
 
             if head == 'D':
                 tmp = [ int(x) for x in tail.split(' ') ]
-                idx, idx_vtree, ele_cnt = tmp[0], tmp[1], tmp[2]
+                idx, vtree_idx, ele_cnt = tmp[0], tmp[1], tmp[2]
                 tmp = tmp[3:]
-                u = Sdd(idx)
+
+                u = Sdd(idx, None, vtree_node_cache[vtree_idx])
                 for i in range(0, ele_cnt * 2, 2):
                     u.add_element((node_cache[tmp[i]], node_cache[tmp[i + 1]]))
-                if idx == 1:
-                    node_1 = u
 
-                root = node_cache[idx] = u
+                node_cache[idx] = u
+            if idx is not None:
+                root = node_cache[idx]
 
     node_cache = {}
 
     root.node_count = node_count
 
-    root.vtree = vtree_from_file(vtree_file)
-
-    # with open('before', 'w') as f:
-        # f.write(root.dump())
-
-    root.node_count = root.normalize(root.node_count)
-
-    # with open('after', 'w') as f:
-    #     f.write(root.dump())
-
     return root
 
-def sdd_to_psdd(sdd):
+def sdd_to_psdd(sdd):     
     u = Psdd(sdd.idx, sdd.vtree)
-    try:
-        u._base = int(sdd.base)
-    except:
-        u._base = sdd.base
+    u._lit = sdd._lit
 
     for p, s in sdd.elements:
         u.add_element(Element(sdd_to_psdd(p), sdd_to_psdd(s)))
@@ -113,12 +121,11 @@ def sdd_to_psdd(sdd):
     return u
 
 def psdd_from_vtree(vtree_file):
-    root = Sdd(0)
-    root.add_element((Sdd(idx=1, base='T'), Sdd(idx=2, base='T')))
-    root.vtree = vtree_from_file(vtree_file)
+    vtree = vtree_from_file(vtree_file)
 
-    root.node_count = 3
-    root.node_count = root.normalize(root.node_count)
+    root = Sdd(0, 'T', vtree)
+    root = algo.normalize(root, vtree)
+    root.node_count = algo.re_index(root)
 
     return sdd_to_psdd(root)
 

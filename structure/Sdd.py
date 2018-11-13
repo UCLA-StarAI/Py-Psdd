@@ -2,9 +2,10 @@ import queue
 
 class Sdd(object):
 
-    def __init__(self, idx, base=None, vtree=None):
+    def __init__(self, idx=0, lit=None, vtree=None):
         self._idx = idx
-        self._base = base
+        self._lit = lit
+        # self._base = lit
         self._vtree = vtree
 
         if self._vtree is not None:
@@ -14,12 +15,6 @@ class Sdd(object):
 
         self._elements = []
         self._node_count = 1
-        # if vtree is None:
-        #     self._vtree = None
-        #     self._vtree_idx = None
-        # else:
-        #     self._vtree = vtree
-        #     self._vtree_idx = vtree.idx
 
     @property
     def is_terminal(self):
@@ -29,19 +24,34 @@ class Sdd(object):
     def idx(self):
         return self._idx
 
+    @idx.setter
+    def idx(self, val):
+        self.idx = val
+
     @property
+    def lit(self):
+        return self._lit
+
+    @lit.setter
+    def lit(self, val):
+        self._lit = val
+
     def base(self):
-        if self._base is not None:
-            return str(self._base)
+        if self._lit is not None:            
+            return str(self._lit)
 
         res = ""
-        for p, s in self._elements:
+        for p, s in self._elements:            
             if res != "":
-                res += " OR "
-            res += "(" + p.base + " AND " + s.base + ")"
+                res += " OR "            
+            res += "(" + p.base() + " AND " + s.base() + ")"
             res = "(" + res + ")"
 
         return res
+
+    # @base.setter
+    # def base(self, val):
+    #     self._base = val
 
     @property
     def elements(self):
@@ -68,54 +78,23 @@ class Sdd(object):
         return self._vtree
 
     @vtree.setter
-    def vtree(self, u):        
+    def vtree(self, u):
         self._vtree = u
         self._vtree_idx = u.idx
+
+    def copy(self):
+        res = Sdd()
         for p, s in self._elements:
-            p.vtree = u.left
-            s.vtree = u.right
+            res.add_element((p.copy(),s.copy()))
+        res._idx = self._idx
+        res._lit = self._lit
+        res._vtree = self._vtree
+        res._node_count = self._node_count
+        return res
 
     def add_element(self, element):
         self._elements.append(element)
 
-    def normalize(self, vtree, next_idx):
-        for e in self._elements:
-            for u in e:
-                uv = vtree
-                if not uv.is_terminal:
-
-                    if u.is_terminal:
-
-                        if u._base == 'T':
-                            u._base = None
-                            u.add_element((Sdd(next_idx, 'T', uv.left), Sdd(next_idx + 1, 'T', uv.right)))
-                            next_idx += 2
-
-                        if u._base == 'F':
-                            u._base = None
-                            u.add_element((Sdd(next_idx, 'T', uv.left), Sdd(next_idx + 1, 'F', uv.right)))
-                            next_idx += 2
-                            print('F', u._idx)
-
-                        if isinstance(u._base, int):
-                            var = u._base
-                            u._base = None
-
-                            if abs(var) in uv.left.variables:
-                                u.add_element((Sdd(next_idx, var, uv.left), Sdd(next_idx + 1, 'T', uv.right)))
-                                next_idx += 2
-                                u.add_element((Sdd(next_idx, -var, uv.left), Sdd(next_idx + 1, 'F', uv.right)))
-                                next_idx += 2
-
-                            if abs(var) in uv.right.variables:
-                                u.add_element((Sdd(next_idx, 'T', uv.left), Sdd(next_idx + 1, var, uv.right)))
-                                next_idx += 2
-
-                    next_idx = u.normalize(next_idx)
-
-        return next_idx
-
-    
     def dump(self):
         res_cache = []
 
@@ -129,15 +108,15 @@ class Sdd(object):
             u = Q.get()
             s = ''
             if u.is_terminal:
-                if u._base == 'T':
+                if u._lit == 'T':
                     s = 'T {} {}'.format(u._idx, u._vtree.idx)
-                if u._base == 'F':
+                if u._lit == 'F':
                     s = 'F {} {}'.format(u._idx, u._vtree.idx)
-                if isinstance(u._base, int):
-                    s = 'L {} {} {}'.format(u._idx, u._vtree.idx, u._base)
+                if isinstance(u._lit, int):
+                    s = 'L {} {} {}'.format(u._idx, u._vtree.idx, u._lit)
             else:
                 s = 'D {} {} {}'.format(u._idx, u._vtree.idx, len(u._elements))
-                for prime, sub in u._elements:                    
+                for prime, sub in u._elements:
                     s += ' {} {}'.format(prime._idx, sub._idx)
 
                     if prime._idx not in vis:

@@ -4,30 +4,81 @@ from structure.Sdd import *
 
 import math
 
+def _satisfy(u, asgn, f):
+    if u._idx in f:
+        return f[u._idx]
+
+    if u.is_terminal:
+        if u._lit == 'F':
+            f[u._idx] = False
+            return False
+        if u._lit == 'T':
+            f[u._idx] = True
+            return True
+        if isinstance(u._lit, int):
+            res = asgn[abs(u._lit)]
+            if u._lit < 0:
+                res = not res
+            f[u._idx] = res
+            return res
+
+    for e in u._elements:
+        if _satisfy(e._prime, asgn, f):
+            if _satisfy(e._sub, asgn, f):
+                f[u._idx] = True
+                return True
+            else:
+                f[u._idx] = False
+                return False
+
+def _add_weight(u, asgn, w, f, g, h):
+    if u._idx not in g:
+        u._context_weight += w
+        g[u._idx] = True
+    if u.is_terminal:
+        if u._lit == 'T':
+            if asgn[list(u._vtree.variables)[0]] and (u._idx not in h):
+                u._weight += w
+                h[u._idx] = True
+    else:
+        for e in u._elements:
+            p, s = e._prime, e._sub
+            if (p._idx in f) and f[p._idx]:
+                e._weight += w
+                _add_weight(p, asgn, w, f, g, h)
+                _add_weight(s, asgn, w, f, g, h)
+
+def set_data(u, data):
+    if data is not None:
+        set_data(u, None)
+        for asgn, w in data.items():
+            f, g, h = {}, {}, {}
+            _satisfy(u, asgn, f)
+            _add_weight(u, asgn, w, f, g, h)
+
+    if data is None:
+        u._weight = 0.0
+        u._context_weight = 0.0
+        for e in u._elements:
+            e._theta = 0.0
+            e._weight = 0.0
+            set_data(e._prime, None)
+            set_data(e._sub, None)
+
 def compute_parameter(u):
-    print(u._idx, u._context_weight, u.weight)
     ele_cnt = len(u._elements)
     for e in u._elements:
-        p, s, theta = e._prime, e._sub, None
+        p, s = e._prime, e._sub
+        e._theta = 0.0
         if u._context_weight != 0.0:
-            theta = (p._context_weight + 0.0) / (u._context_weight + 0.0 * float(ele_cnt))
-        else:
-            theta = 1e-10
-
-        if theta == 0.0:
-            theta = 1e-10
-        e.theta = theta
-
+            e._theta = e._weight / u._context_weight
         compute_parameter(p)
         compute_parameter(s)
 
-    if u._base == 'T':
+    if u.is_terminal and u._lit == 'T':
+        u._theta = 0.0
         if u._context_weight != 0.0:
-            u._theta = (u._weight + 0.0) / (u._context_weight + 0.0)
-            if u._theta == 0.0:
-                u._theta = 1e-10
-        else:
-            u._theta = 1e-10
+            u._theta = u._weight / u._context_weight
 
 def compute_probability(u, asgn, d=0):
     flag = False
@@ -35,29 +86,28 @@ def compute_probability(u, asgn, d=0):
         if asgn[x] is not None:
             flag = True
             break
-    if flag is False:
+    if flag == False:
         return 1.0
 
     res = None
     if u.is_terminal:
-        if u._base == 'F':
+        if u._lit == 'F':
             res = 0.0
 
-        if u._base == 'T':
-            v = list(u.vtree.variables)[0]
-            res = u._theta if asgn[v] else (1.0 - u._theta)
+        if u._lit == 'T':
+            v = list(u.vtree.variables)[0]            
+            res = u._theta if asgn[v] else (1.0 - u._theta)            
 
-        if isinstance(u._base, int):
-            v = abs(u._base)
-            sgn = 1 if u._base > 0 else -1
-            asgn_v = 1 if asgn[v] is True else -1
+        if isinstance(u._lit, int):
+            v = abs(u._lit)
+            sgn = 1 if u._lit > 0 else -1
+            asgn_v = 1 if asgn[v] == True else -1
             res = 1.0 if sgn * asgn_v > 0 else 0.0
     else:
         res = 0.0
         for e in u._elements:
             p, s, theta = e._prime, e._sub, e._theta
             res += compute_probability(p, asgn, d + 1) * compute_probability(s, asgn, d + 1) * theta
-
     return res
 
 def compute_log_likelihood(u, data):
@@ -66,30 +116,38 @@ def compute_log_likelihood(u, data):
         res += w * math.log(compute_probability(u, asgn))
     return res
 
+def re_index(u, next_idx=0):
+    u._idx = next_idx
+    next_idx += 1
+    for p, s in u._elements:
+        next_idx = re_index(p, next_idx)
+        next_idx = re_index(s, next_idx)
+    return next_idx
+
 def negate(u):
     if u.is_terminal:
-        if isinstance(u._base, int):
-            u._base = -u._base
-        if u._base == 'T':
-            u._base = 'F'
-        if u._base == 'F':
-            u._base = 'T'
+        if isinstance(u._lit, int):
+            u._lit = -u._lit
+        if u._lit == 'T':
+            u._lit = 'F'
+        if u._lit == 'F':
+            u._lit = 'T'
         return None
 
     for p, s in u._elements:
         negate(s)
 
-def apply(u1, u2, op, next_idx=0, cache={}):
+def apply(u1, u2, op, cache): # bug possible
     idx1, idx2 = u1.idx, u2.idx
     if (idx1, idx2, op) in cache:
-        return cache[(idx1, idx2, op)], next_idx
+        return cache[(idx1, idx2, op)]
     if (idx2, idx1, op) in cache:
-        return cache[(idx2, idx1, op)], next_idx
+        return cache[(idx2, idx1, op)]
 
     res = None
     if u1.is_terminal and u2.is_terminal:
         b = None
-        b1, b2 = u1._base, u2._base
+        b1, b2 = u1._lit, u2._lit
         if isinstance(b2, int):
             b1, b2 = b2, b1
 
@@ -108,39 +166,80 @@ def apply(u1, u2, op, next_idx=0, cache={}):
             if op == 'AND':
                 b = 'F' if b1 == 'F' else b2
             if op == 'OR':
-                b = 'T' if b1 == 'T' else b2            
+                b = 'T' if b1 == 'T' else b2
 
-        res = Sdd(idx=next_idx, base=b, vtree=u1.vtree)
-        next_idx += 1
-        return res, next_idx
+        res = Sdd(0, b, u1.vtree)
+        return res
 
-    res = Sdd(idx=next_idx, base=None, vtree=u1.vtree)
+    res = Sdd(0, None, u1.vtree)
     for p, s in u1._elements:
         for q, t in u2._elements:
-            r, next_idx = apply(p, q, 'AND', next_idx, cache)
-            u, next_idx = apply(s, t, op, next_idx, cache)
+            r = apply(p, q, 'AND', cache)
+            u = apply(s, t, op, cache)
             res.add_element((r, u))
-    return res    
 
-def normalize(u, v, next_idx):
+    cache[(idx2, idx1, op)] = cache[(idx1, idx2, op)] = res
+    return res
 
-    if u.is_terminal:
-        if isinstance(u._base, int):
-            var = u._base
-            u._base = None
+def normalize(u, v):
+    if v.left is None:
+        u.vtree = v
+        return u
 
-            if abs(var) in v.left.variables:
-                u.add_element
+    ul = u.lit
+    if ul == 'T' or ul == 'F':
+        u.vtree = v
+        u.lit = None
+        u.add_element((Sdd(0, 'T', v.left), Sdd(0, ul, v.right)))
+    elif u.vtree.idx != v.idx:
+        w = u.vtree
+        while w.parent.idx != v.idx:
+            w = w.parent
 
-        return None
+        res = Sdd()
+        res.vtree = v
+        flag = None
+        if v.left is w:
+            p1, p2 = u, u.copy()
+            negate(p2)
+            res.add_element((p1, Sdd(0, 'T', v.right)))
+            res.add_element((p2, Sdd(0, 'F', v.right)))
 
-def compile(cnf, vtree):
-    ri = Sdd(0, 'T', vtree)
+        if v.right is w:
+            res.add_element((Sdd(0, 'T', v.left), u))
+        u = res
+
+    tmp = []
+    for p, s in u._elements:
+        q = normalize(p, u.vtree.left)
+        t = normalize(s, u.vtree.right)
+        tmp.append((q, t))
+    u._elements = tmp
+
+    return u
+
+def compile(cnf, vtree): # bug possible
+    def f(v):
+        if v.is_terminal:
+            return { v._var: v }
+        return { **f(v.left), **f(v.right) }
+    m = f(vtree)
+
+    ri = Sdd(0, 'T')
+    ri = normalize(ri, vtree)
+    ri._node_count = re_index(ri)
     for clause in cnf:
-        rj = Sdd(0, 'T', vtree)
+        rj = normalize(Sdd(0, 'F'), vtree)
+        rj._node_count = re_index(rj)
         for lit in clause:
-            rk = Sdd(0, lit, vtree)
-            rk = normalize(rk, vtree, 1)
-            rj = apply(rj, rk, 'OR')
-        ri = apply(ri, rj, 'AND')
+            rk = normalize(Sdd(0, lit, m[abs(lit)]), vtree)
+            rk._node_count = re_index(rk)
+
+            cache = {}
+            rj = apply(rj, rk, 'OR', cache)
+            rj._node_count = re_index(rj)
+
+        cache = {}
+        ri = apply(ri, rj, 'AND', cache)
+        ri._node_count = re_index(ri)
     return ri

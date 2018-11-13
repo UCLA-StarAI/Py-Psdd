@@ -1,6 +1,7 @@
 from util import util
 from util import data
 from algo import algo
+from structure.Sdd import *
 
 def dfs(psdd, asgn, d, l):
     if d == l:
@@ -15,16 +16,18 @@ def dfs(psdd, asgn, d, l):
     return res
 
 if __name__ == '__main__':
-    # sdd = util.sdd_from_file('./examples/big-swap.sdd', './examples/big-swap.vtree')
-    # print(sdd.base)
-    # psdd = util.sdd_to_psdd(sdd=sdd)
-    psdd = util.psdd_from_vtree('./examples/big-swap.vtree')
-    print(psdd.base)
-    data_set = data.DataSet(train_data_file="./examples/data.txt")
-    psdd.data = data_set.train
+    # sdd = algo.compile(util.cnf_from_file('./examples/my.cnf'), util.vtree_from_file('./examples/my.vtree'))
+    # psdd = util.psdd_from_vtree('./examples/big-swap.vtree')
+    sdd = util.sdd_from_file('./examples/big-swap.sdd', './examples/big-swap.vtree')
+    sdd = algo.normalize(sdd, util.vtree_from_file('./examples/big-swap.vtree'))
+    sdd.node_count = algo.re_index(sdd)
+    psdd = util.sdd_to_psdd(sdd=sdd)
+    data_set = data.DataSet(train_data_file="./examples/big-swap.data")
+    algo.set_data(psdd, data_set.train)
     algo.compute_parameter(psdd)
     util.psdd_to_file(psdd, './examples/big-swap.psdd')
-    # print("log_ll: ", algo.compute_log_likelihood(psdd, data_set.train))
+    print("log_ll: ", algo.compute_log_likelihood(psdd, data_set.train))
     print("Check: {}".format(dfs(psdd, (None, ), 0, data_set.dim)))
+
 
 
