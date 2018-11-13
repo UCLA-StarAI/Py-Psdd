@@ -183,8 +183,6 @@ def apply(u1, u2, op, cache): # bug with cache
     idx1, idx2 = u1.idx, u2.idx
     if (idx1, idx2, op) in cache:
         return cache[(idx1, idx2, op)]
-    if (idx2, idx1, op) in cache:
-        return cache[(idx2, idx1, op)]
 
     if u1.is_terminal and u2.is_terminal:
         b = None
@@ -209,8 +207,7 @@ def apply(u1, u2, op, cache): # bug with cache
             if op == 'OR':
                 b = 'T' if b1 == 'T' else b2
 
-        res = Sdd(0, b, u1.vtree)
-        cache[(idx2, idx1, op)] = res
+        res = Sdd(0, b, u1.vtree)        
         cache[(idx1, idx2, op)] = res
         return res
 
@@ -221,7 +218,6 @@ def apply(u1, u2, op, cache): # bug with cache
             u = apply(s, t, op, cache)
             res.add_element((r, u))
 
-    cache[(idx2, idx1, op)] = res
     cache[(idx1, idx2, op)] = res
     return res
 
