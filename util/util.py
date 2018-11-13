@@ -65,7 +65,7 @@ def sdd_from_file(sdd_file, vtree_file):
     with open(sdd_file, "r") as f:
 
         for line in f:
-            line = line[:-1]            
+            line = line[:-1]
 
             head = line.split(' ', 1)[0]
 
@@ -110,7 +110,7 @@ def sdd_from_file(sdd_file, vtree_file):
 
     return root
 
-def sdd_to_psdd(sdd):     
+def sdd_to_psdd(sdd):
     u = Psdd(sdd.idx, sdd.vtree)
     u._lit = sdd._lit
 

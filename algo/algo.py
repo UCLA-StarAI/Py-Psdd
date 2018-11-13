@@ -207,7 +207,7 @@ def apply(u1, u2, op, cache): # bug with cache
             if op == 'OR':
                 b = 'T' if b1 == 'T' else b2
 
-        res = Sdd(0, b, u1.vtree)        
+        res = Sdd(0, b, u1.vtree)
         cache[(idx1, idx2, op)] = res
         return res
 

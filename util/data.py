@@ -11,7 +11,7 @@ class DataSet(object):
         if valid_data_file is not None:
             self._valid = self.read_data(valid_data_file)
         if test_data_file is not None:
-            self._test = self.read_data(test_data_file)    
+            self._test = self.read_data(test_data_file)
 
     @property
     def dim(self):
@@ -45,9 +45,9 @@ class DataSet(object):
                     asgn = asgn + (x, )
 
                 if asgn not in data:
-                    data[asgn] = 0            
+                    data[asgn] = 0
 
-                data[asgn] = data[asgn] + w            
+                data[asgn] = data[asgn] + w
 
                 self._dim = len(asgn) - 1
 

@@ -36,13 +36,13 @@ class Sdd(object):
         self._lit = val
 
     def base(self):
-        if self._lit is not None:            
+        if self._lit is not None:
             return str(self._lit)
 
         res = ""
-        for p, s in self._elements:            
+        for p, s in self._elements:
             if res != "":
-                res += " OR "            
+                res += " OR "
             res += "(" + p.base() + " AND " + s.base() + ")"
             res = "(" + res + ")"
 

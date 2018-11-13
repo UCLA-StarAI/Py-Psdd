@@ -50,5 +50,5 @@ class Vtree(object):
             return self._var_set
 
         self._var_set = self._left.variables | self._right.variables
-        
+
         return self._var_set
