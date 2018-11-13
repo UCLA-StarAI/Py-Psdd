@@ -3,6 +3,7 @@ from structure.Element import *
 from structure.Sdd import *
 
 import math
+import random
 
 def _satisfy(u, asgn, f):
     if u._idx in f:
@@ -115,6 +116,47 @@ def compute_log_likelihood(u, data):
     for asgn, w in data.items():
         res += w * math.log(compute_probability(u, asgn))
     return res
+
+def EM(psdd0, psdd1, data):
+    data0 = {}
+    data1 = {}
+    for asgn, w in data.items():
+        q = random.gauss(0.5, 0.15)
+        q = min(q, 0.99)
+        q = max(q, 0.01)
+        data0[asgn] = w * (1 - q)
+        data1[asgn] = w * q
+    
+    set_data(psdd0, data0)
+    set_data(psdd1, data1)
+    compute_parameter(psdd0)
+    compute_parameter(psdd1)
+
+    for i in range(1000):
+        # structure learning
+        for j in range(50):
+            W0, W1 = 0.0, 0.0
+            for asgn, w in data0.items():
+                W0 += w
+            for asgn, w in data1.items():
+                W1 += w
+            p0 = W0 / (W0 + W1)
+            p1 = W1 / (W0 + W1)
+            
+            for asgn, w in data.items():
+                q0 = compute_probability(psdd0, asgn)
+                q1 = compute_probability(psdd1, asgn)
+                r0 = q0 * p0
+                r1 = q1 * p1
+                w0 = r0 / (r0 + r1)
+                w1 = r1 / (r0 + r1)
+                data0[asgn] = w0 * w
+                data1[asgn] = w1 * w
+
+            set_data(psdd0, data0)
+            set_data(psdd1, data1)
+            compute_parameter(psdd0)
+            compute_parameter(psdd1)
 
 def re_index(u, next_idx=0):
     u._idx = next_idx
