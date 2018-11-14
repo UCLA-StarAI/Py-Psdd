@@ -8,7 +8,8 @@ def cnf_from_file(cnf_file):
     cnf = []
     with open(cnf_file, 'r') as f:
         for line in f:
-            line = line[:-1]
+            line = line.strip()
+            # line = line[:-1]
             if line[0] == 'c':
                 continue
             elif line[0] == 'p':
@@ -23,8 +24,8 @@ def vtree_from_file(vtree_file, return_node_cache=False):
 
     with open(vtree_file, 'r') as f:
 
-        for line in f:
-            line = line[:-1] #Get rid of the '\n' TODO
+        for line in f:            
+            line = line.strip()            
 
             head = line.split(' ')[0]
 
@@ -65,7 +66,8 @@ def sdd_from_file(sdd_file, vtree_file):
     with open(sdd_file, "r") as f:
 
         for line in f:
-            line = line[:-1]
+            line = line.strip()
+            # line = line[:-1]
 
             head = line.split(' ', 1)[0]
 
@@ -139,7 +141,8 @@ def psdd_from_file(psdd_file, vtree_file):
     with open(psdd_file, "r") as f:
 
         for line in f:
-            line = line.strip([' ', '\n'])
+            line = line.strip()
+            # line = line.strip([' ', '\n'])
 
             head = line.split(' ', 1)[0]
 
