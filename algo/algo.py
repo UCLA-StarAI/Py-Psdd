@@ -70,18 +70,18 @@ def compute_parameter(u):
     ele_cnt = len(u._elements)
     for e in u._elements:
         p, s = e._prime, e._sub
-        e._theta = 0.0
-        if u._context_weight != 0.0:
-            e._theta = e._weight / u._context_weight
+        # e._theta = 0.0
+        # if u._context_weight != 0.0:
+        e._theta = (e._weight + 0.1) / (u._context_weight + ele_cnt * 0.1)
         compute_parameter(p)
         compute_parameter(s)
 
     if u.is_terminal and u._lit == 'T':
-        u._theta = 0.0
+        u._theta = 0.5
         if u._context_weight != 0.0:
             u._theta = u._weight / u._context_weight
 
-def compute_probability(u, asgn, d=0):
+def compute_probability(u, asgn):
     flag = False
     for x in u.vtree.variables:
         if asgn[x] is not None:
@@ -108,7 +108,7 @@ def compute_probability(u, asgn, d=0):
         res = 0.0
         for e in u._elements:
             p, s, theta = e._prime, e._sub, e._theta
-            res += compute_probability(p, asgn, d + 1) * compute_probability(s, asgn, d + 1) * theta
+            res += compute_probability(p, asgn) * compute_probability(s, asgn) * theta
     return res
 
 def compute_log_likelihood(u, data):
@@ -221,16 +221,31 @@ def apply(u1, u2, op, cache): # bug with cache
     cache[(idx1, idx2, op)] = res
     return res
 
-def normalize(u, v):
+def normalize(u, v, cache_lit, cache_idx):
     if v.left is None:
         u.vtree = v
         return u
 
-    ul = u.lit
-    if ul == 'T' or ul == 'F':
-        u.vtree = v
-        u.lit = None
-        u.add_element((Sdd(0, 'T', v.left), Sdd(0, ul, v.right)))
+    res = None
+    lit = u.lit
+    idx = u.idx
+    if lit is not None:
+        if v.idx in cache_lit:
+            if lit in cache_lit[v.idx]:
+                return cache_lit[v.idx][lit]
+        else:
+            cache_lit[v.idx] = {}
+    if idx != -1:
+        if v.idx in cache_idx:
+            if idx in cache_idx[v.idx]:
+                return cache_idx[v.idx][idx]
+        else:
+            cache_idx[v.idx] = {}
+
+    if lit == 'T' or lit == 'F':
+        res = Sdd()
+        res.vtree = v
+        res.add_element((Sdd(-1, 'T', v.left), Sdd(-1, u.lit, v.right)))
     elif u.vtree.idx != v.idx:
         w = u.vtree
         while w.parent.idx != v.idx:
@@ -238,25 +253,30 @@ def normalize(u, v):
 
         res = Sdd()
         res.vtree = v
-        flag = None
-        if v.left is w:
+        if v.left.idx == w.idx:
             p1, p2 = u, u.copy()
             negate(p2)
-            res.add_element((p1, Sdd(0, 'T', v.right)))
-            res.add_element((p2, Sdd(0, 'F', v.right)))
+            res.add_element((p1, Sdd(-1, 'T', v.right)))
+            res.add_element((p2, Sdd(-1, 'F', v.right)))
 
-        if v.right is w:
-            res.add_element((Sdd(0, 'T', v.left), u))
-        u = res
+        if v.right.idx == w.idx:
+            res.add_element((Sdd(-1, 'T', v.left), u))
+    else:
+        res = u
 
     tmp = []
-    for p, s in u._elements:
-        q = normalize(p, u.vtree.left)
-        t = normalize(s, u.vtree.right)
+    for p, s in res._elements:
+        q = normalize(p, res.vtree.left, cache_lit, cache_idx)
+        t = normalize(s, res.vtree.right, cache_lit, cache_idx)
         tmp.append((q, t))
-    u._elements = tmp
+    res._elements = tmp
 
-    return u
+    if lit is not None:
+        cache_lit[v.idx][lit] = res
+    if idx != -1:
+        cache_idx[v.idx][idx] = res
+
+    return res
 
 def compile(cnf, vtree):
     def f(v):
@@ -277,24 +297,26 @@ def compile(cnf, vtree):
                 return res
         return None
 
-    cache = {}
+    cache_lit, cache_idx = {}, {}    
     ri = Sdd(0, 'T')
-    ri = normalize(ri, vtree)
+    ri = normalize(ri, vtree, cache_lit, cache_idx)
     ri._node_count = re_index(ri)
     for clause in cnf:
         rj = Sdd(0, 'F')
-        rj = normalize(rj, vtree)
+        cache_lit, cache_idx = {}, {}        
+        rj = normalize(rj, vtree, cache_lit, cache_idx)
         rj._node_count = re_index(rj)
         for lit in clause:
             rk = Sdd(0, lit, m[abs(lit)])
-            rk = normalize(rk, vtree)
+            cache_lit, cache_idx = {}, {}            
+            rk = normalize(rk, vtree, cache_lit, cache_idx)
             rk._node_count = re_index(rk)
 
-            cache.clear()
-            rj = apply(rj, rk, 'OR', cache)
+            cache_lit, cache_idx = {}, {}            
+            rj = apply(rj, rk, 'OR', cache_lit, cache_idx)
             rj._node_count = re_index(rj)
 
-        cache.clear()
+        cache_lit, cache_idx = {}, {}
         ri = apply(ri, rj, 'AND', cache)
         ri._node_count = re_index(ri)
 

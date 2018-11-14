@@ -33,12 +33,18 @@ class DataSet(object):
         data = {}
         with open(file_name, 'r') as f:
             for line in f:
-                if line[-1] == '\n':
-                    line = line[:-1]
+                line = line.strip()
+                # if line[-1] == '\n':
+                    # line = line[:-1]
 
-                head, tail = line.split('|', 1)
-
-                w = float(head)
+                w = 1.0
+                try:
+                    head, tail = line.split('|', 1)
+                    w = float(head)
+                except:
+                    tail = line
+                
+                w = 1.0
                 d = [ (x == '1') for x in tail.split(',') ]
                 asgn = (None, )
                 for x in d:
