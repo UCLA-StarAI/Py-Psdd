@@ -2,6 +2,9 @@
 __pycache__
 temp/*
 examples/*
+examples
 .vscode/*
+.vscode
 lib/*
 workspace/*
+workspace

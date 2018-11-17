@@ -76,7 +76,7 @@ def preprocess():
 
     # learn_vtree
     print('learning vtree from data...')
-    os.system('java -jar ./lib/psdd.jar learnVtree -d {} -o ./workspace/'.format(train_data_file))    
+    os.system('java -jar ./lib/psdd.jar learnVtree -d {} -o ./workspace/'.format(train_data_file))
     os.system('mv ./workspace/.vtree {}'.format(vtree_file))
 
     # gen_cnf
@@ -97,20 +97,29 @@ def preprocess():
     cache_lit, cache_idx = {}, {}
     sdd = algo.normalize(sdd, vtree, cache_lit, cache_idx)
     sdd._node_count = algo.re_index(sdd)
-    psdd0 = util.sdd_to_psdd(sdd)
-    psdd1 = util.sdd_to_psdd(sdd)
-    util.psdd_to_file(psdd0, psdd0_file)
-    util.psdd_to_file(psdd1, psdd1_file)
+    cache = {}
+    psdd0 = util.sdd_to_psdd(sdd, cache)
+    cache = {}
+    psdd1 = util.sdd_to_psdd(sdd, cache)
     data_set = data.DataSet(train_data_file=train_data_file, valid_data_file=valid_data_file)
 
     return psdd0, psdd1, data_set
 
 def compute_ensemble_log_likelihood(psdd0, p0, psdd1, p1, data):
     ll = 0.0
-    for asgn, w in data.items():
-        q0 = algo.compute_probability(psdd0, asgn) * p0
-        q1 = algo.compute_probability(psdd1, asgn) * p1
-        ll += w * math.log(q0 + q1)
+    asgn_batch = [ asgn for asgn, w in data.items() ]
+    w_batch = [ w for asgn, w in data.items() ]    
+
+    cache = {}
+    Q0 = algo.compute_probability_batch(psdd0, asgn_batch, cache)
+    cache = {}
+    Q1 = algo.compute_probability_batch(psdd1, asgn_batch, cache)
+
+    ll = sum(w * math.log(q0 * p0 + q1 * p1) for q0, q1, w in zip(Q0, Q1, w_batch))
+    # for asgn, w in data.items():
+    #     q0 = algo.compute_probability(psdd0, asgn) * p0
+    #     q1 = algo.compute_probability(psdd1, asgn) * p1
+    #     ll += w * math.log(q0 + q1)
     return ll
 
 def EM(psdd0, psdd1, data_set):
@@ -131,7 +140,7 @@ def EM(psdd0, psdd1, data_set):
     algo.compute_parameter(psdd1)
 
     count = 0
-    for i in range(2):
+    for i in range(1):
         # structure learning
         for j in range(100):
             W0, W1 = 0.0, 0.0
@@ -142,15 +151,27 @@ def EM(psdd0, psdd1, data_set):
             p0 = W0 / (W0 + W1)
             p1 = W1 / (W0 + W1)
 
-            for asgn, w in train.items():
-                q0 = algo.compute_probability(psdd0, asgn)
-                q1 = algo.compute_probability(psdd1, asgn)
-                r0 = q0 * p0
-                r1 = q1 * p1
-                w0 = r0 / (r0 + r1)
-                w1 = r1 / (r0 + r1)
-                data0[asgn] = w0 * w
-                data1[asgn] = w1 * w
+            asgn_batch = [ asgn for asgn, w in train.items() ]
+            w_batch = [ w for asgn, w in train.items() ]
+
+            cache = {}
+            Q0 = algo.compute_probability_batch(psdd0, asgn_batch, cache)
+            cache = {}
+            Q1 = algo.compute_probability_batch(psdd1, asgn_batch, cache)
+
+            Q0 = [ x * p0 / (x * p0 + y * p1) for x, y in zip(Q0, Q1) ]
+            for q0, asgn, w in zip(Q0, asgn_batch, w_batch):
+                data0[asgn] = q0 * w
+                data1[asgn] = (1.0 - q0) * w
+            # for asgn, w in train.items():
+            #     q0 = algo.compute_probability(psdd0, asgn)
+            #     q1 = algo.compute_probability(psdd1, asgn)
+            #     r0 = q0 * p0
+            #     r1 = q1 * p1
+            #     w0 = r0 / (r0 + r1)
+            #     w1 = r1 / (r0 + r1)
+            #     data0[asgn] = w0 * w
+            #     data1[asgn] = w1 * w
 
             algo.set_data(psdd0, data0)
             algo.set_data(psdd1, data1)
@@ -172,6 +193,10 @@ def EM(psdd0, psdd1, data_set):
         W1 += w
     p0 = W0 / (W0 + W1)
     p1 = W1 / (W0 + W1)
+
+    util.psdd_to_file(psdd0, psdd0_file)
+    util.psdd_to_file(psdd1, psdd1_file)
+
     return psdd0, psdd1, p0, p1
 
 def generate_labels(psdd0, psdd1, p0, p1):
@@ -190,11 +215,11 @@ def generate_labels(psdd0, psdd1, p0, p1):
             l1 = (q0 * p0) / (q0 * p0 + q1 * p1)
             label0.append(l0)
             label1.append(l1)
-    
+
     with open(label0_file, 'w') as f:
         for x in label0:
             f.write('{}\n'.format(x))
-    
+
     with open(label1_file, 'w') as f:
         for x in label1:
             f.write('{}\n'.format(x))
