@@ -38,13 +38,13 @@ class DataSet(object):
                     # line = line[:-1]
 
                 w = 1.0
+                tail = None
                 try:
                     head, tail = line.split('|', 1)
                     w = float(head)
                 except:
                     tail = line
-                
-                w = 1.0
+                                
                 d = [ (x == '1') for x in tail.split(',') ]
                 asgn = (None, )
                 for x in d:

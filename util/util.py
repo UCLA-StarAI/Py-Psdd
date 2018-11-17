@@ -112,14 +112,17 @@ def sdd_from_file(sdd_file, vtree_file):
 
     return root
 
-def sdd_to_psdd(sdd):
+def sdd_to_psdd(sdd, cache):
+    if sdd.idx in cache:
+        return cache[sdd.idx]
     u = Psdd(sdd.idx, sdd.vtree)
     u._lit = sdd._lit
 
     for p, s in sdd.elements:
-        u.add_element(Element(sdd_to_psdd(p), sdd_to_psdd(s)))
+        u.add_element(Element(sdd_to_psdd(p, cache), sdd_to_psdd(s, cache)))
     u._node_count = sdd.node_count
 
+    cache[sdd.idx] = u
     return u
 
 def psdd_from_vtree(vtree_file):

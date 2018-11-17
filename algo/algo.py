@@ -81,7 +81,9 @@ def compute_parameter(u):
         if u._context_weight != 0.0:
             u._theta = u._weight / u._context_weight
 
-def compute_probability(u, asgn):
+def compute_probability(u, asgn, cache):
+    if u.idx in cache:
+        return cache[u.idx]
     flag = False
     for x in u.vtree.variables:
         if asgn[x] is not None:
@@ -108,7 +110,52 @@ def compute_probability(u, asgn):
         res = 0.0
         for e in u._elements:
             p, s, theta = e._prime, e._sub, e._theta
-            res += compute_probability(p, asgn) * compute_probability(s, asgn) * theta
+            if theta != 0.0:
+                res += compute_probability(p, asgn, cache) * compute_probability(s, asgn, cache) * theta
+    cache[u.idx] = res
+    return res
+
+def compute_probability_batch(u, asgn_batch, cache):
+    if u.idx in cache:
+        return cache[u.idx]
+    # flag = False
+    # for x in u.vtree.variables:
+    #     if asgn[x] is not None:
+    #         flag = True
+    #         break
+    # if flag == False:
+    #     return [ 1.0 for x in range(len(asgn_batch)) ]
+
+    res = None
+    if u.is_terminal:
+        v = list(u.vtree.variables)[0]
+        res = [ 0.0 for x in range(len(asgn_batch)) ]        
+        if u._lit == 'F':            
+            res = [ (asgn[v] == None) * 1.0 for asgn in asgn_batch ]
+            # for idx, asgn in enumerate(asgn_batch):
+                # res[idx] = u._theta
+
+        if u._lit == 'T':
+            # v = list(u.vtree.variables)[0]
+            for idx, asgn in enumerate(asgn_batch):
+                res[idx] = u._theta if asgn[v] or (asgn[v] is None) else (1.0 - u._theta)
+
+        if isinstance(u._lit, int):
+            # v = abs(u._lit)            
+            sgn = 1 if u._lit > 0 else -1
+            for idx, asgn in enumerate(asgn_batch):
+                asgn_v = 1 if asgn[v] == True else -1
+                res[idx] = 1.0 if (sgn * asgn_v > 0) or (asgn[v] is None) else 0.0
+    else:
+        res = [ 0.0 ] * len(asgn_batch)
+        for e in u._elements:
+            p, s, theta = e._prime, e._sub, e._theta            
+            p_res = compute_probability_batch(p, asgn_batch, cache)
+            s_res = compute_probability_batch(s, asgn_batch, cache)            
+            ps_res = [ x * y for x, y in zip(p_res, s_res) ]
+            ps_res = [ x * theta for x in ps_res ]
+            res = [ x + y for x, y in zip(res, ps_res) ]            
+    cache[u.idx] = res
     return res
 
 def compute_log_likelihood(u, data):
@@ -297,22 +344,22 @@ def compile(cnf, vtree):
                 return res
         return None
 
-    cache_lit, cache_idx = {}, {}    
+    cache_lit, cache_idx = {}, {}
     ri = Sdd(0, 'T')
     ri = normalize(ri, vtree, cache_lit, cache_idx)
     ri._node_count = re_index(ri)
     for clause in cnf:
         rj = Sdd(0, 'F')
-        cache_lit, cache_idx = {}, {}        
+        cache_lit, cache_idx = {}, {}
         rj = normalize(rj, vtree, cache_lit, cache_idx)
         rj._node_count = re_index(rj)
         for lit in clause:
             rk = Sdd(0, lit, m[abs(lit)])
-            cache_lit, cache_idx = {}, {}            
+            cache_lit, cache_idx = {}, {}
             rk = normalize(rk, vtree, cache_lit, cache_idx)
             rk._node_count = re_index(rk)
 
-            cache_lit, cache_idx = {}, {}            
+            cache_lit, cache_idx = {}, {}
             rj = apply(rj, rk, 'OR', cache_lit, cache_idx)
             rj._node_count = re_index(rj)
 
